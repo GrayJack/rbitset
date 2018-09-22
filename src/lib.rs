@@ -5,7 +5,10 @@ extern crate num_traits;
 use core::{mem, ops::{Bound, RangeBounds}};
 use num_traits::{Bounded, PrimInt, FromPrimitive, ToPrimitive};
 
-pub trait BitArray: Default + Clone + Copy {
+/// An internal trait used to bypass the fact that rust does not yet have const
+/// generics. Don't implement this yourself, it could lead to undefined
+/// behavior when using `BitSet::from_ref`
+pub unsafe trait BitArray: Default + Clone + Copy {
     /// The item type this array holds
     type Item: Default + PrimInt + FromPrimitive + ToPrimitive;
     /// Returns how many elements this array can hold
@@ -25,7 +28,7 @@ pub trait BitArray: Default + Clone + Copy {
 macro_rules! impl_arrays {
     ($($len:expr),*) => {
         $(
-            impl<T: Default + PrimInt + FromPrimitive + ToPrimitive> BitArray for [T; $len] {
+            unsafe impl<T: Default + PrimInt + FromPrimitive + ToPrimitive> BitArray for [T; $len] {
                 type Item = T;
 
                 fn len() -> usize { $len }
@@ -40,7 +43,7 @@ macro_rules! impl_arrays {
     }
 }
 
-impl_arrays!(1, 2, 3, 4, 5, 6, 7, 8);
+impl_arrays!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
 /// A bit set able to hold up to 8 elements
 pub type BitSet8 = BitSet<[u8; 1]>;
@@ -70,10 +73,26 @@ pub type BitSet512 = BitSet<[u64; 8]>;
 pub struct BitSet<T: BitArray> {
     inner: T
 }
+impl<T: BitArray> From<T> for BitSet<T> {
+    fn from(inner: T) -> Self {
+        Self { inner }
+    }
+}
 impl<T: BitArray> BitSet<T> {
     /// Create an empty instance
     pub fn new() -> Self {
         Self::default()
+    }
+    /// Transmutes a reference to a borrowed bit array to a borrowed BitSet
+    /// with the same lifetime
+    pub fn from_ref(inner: &mut T) -> &mut Self {
+        // This should be completely safe as the memory representation is the
+        // same
+        unsafe { mem::transmute(inner) }
+    }
+    /// Return the inner integer array
+    pub fn into_inner(self) -> T {
+        self.inner
     }
     /// Returns the capacity of the set, in other words how many bits it can
     /// hold. This function may very well overflow if the size or length is too
