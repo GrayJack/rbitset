@@ -1,4 +1,4 @@
-# cbitset
+# cbitset [![Crates.io](https://img.shields.io/crates/v/cbitset.svg)](https://crates.io/crates/cbitset)
 
 A bit set, being able to hold a fixed amount of booleans in an array of
 integers.
