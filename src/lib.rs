@@ -2,15 +2,18 @@
 
 extern crate num_traits;
 
-use core::{mem, ops::{Bound, RangeBounds}};
-use num_traits::{Bounded, PrimInt, FromPrimitive, ToPrimitive};
+use core::{
+    iter::{FromIterator, FusedIterator, ExactSizeIterator},
+    mem,
+    ops::{Bound, RangeBounds},
+};
+use num_traits::{Bounded, PrimInt, Zero, One};
 
-/// An internal trait used to bypass the fact that rust does not yet have const
-/// generics. Don't implement this yourself, it could lead to undefined
-/// behavior when using `BitSet::from_ref`
-pub unsafe trait BitArray: Default + Clone + Copy {
+/// An internal trait used to bypass the fact that rust does not yet
+/// have const generics
+pub trait BitArray: Default + Clone + Copy {
     /// The item type this array holds
-    type Item: Default + PrimInt + FromPrimitive + ToPrimitive;
+    type Item: Default + PrimInt;
     /// Returns how many elements this array can hold
     fn len() -> usize;
     /// Access the element at a specified index.
@@ -28,7 +31,7 @@ pub unsafe trait BitArray: Default + Clone + Copy {
 macro_rules! impl_arrays {
     ($($len:expr),*) => {
         $(
-            unsafe impl<T: Default + PrimInt + FromPrimitive + ToPrimitive> BitArray for [T; $len] {
+            impl<T: Default + PrimInt> BitArray for [T; $len] {
                 type Item = T;
 
                 fn len() -> usize { $len }
@@ -59,6 +62,8 @@ pub type BitSet128 = BitSet<[u64; 2]>;
 pub type BitSet256 = BitSet<[u64; 4]>;
 /// A bit set able to hold up to 512 elements
 pub type BitSet512 = BitSet<[u64; 8]>;
+/// A bit set able to hold up to 1024 elements
+pub type BitSet1024 = BitSet<[u64; 16]>;
 
 /// The bit set itself
 ///
@@ -101,63 +106,62 @@ impl<T: BitArray> BitSet<T> {
     pub fn capacity() -> usize {
         T::len() * Self::item_size()
     }
+
     /// Returns the bit size of each item
     fn item_size() -> usize {
         mem::size_of::<T::Item>() * 8
     }
-    /// Converts a u64 to a T::Item
-    fn from(i: u64) -> T::Item {
-        match FromPrimitive::from_u64(i & T::Item::max_value().to_u64().unwrap()) {
-            Some(i) => i,
-            None => panic!("couldn't convert {} to the generic type", i)
-        }
+    /// Returns slot index along with the bitmask for the bit
+    /// index to the slot this item was in
+    fn location(bit: usize) -> (usize, T::Item) {
+        let index = bit / Self::item_size();
+        let bitmask = T::Item::one() << (bit & Self::item_size() - 1);
+        (index, bitmask)
     }
 
-    /// Enable the value `bit` in the set.
-    /// If `bit` is already enabled this is a no-op.
+    /// Enable the specified bit in the set. If the bit is already
+    /// enabled this is a no-op.
     pub fn insert(&mut self, bit: usize) {
         assert!(self.try_insert(bit), "BitSet::insert called on an integer bigger than capacity");
     }
-    /// Like insert, but does not panic if the bit is too large.
-    /// See the struct level documentation for notes on panicking.
+    /// Like `insert`, but does not panic if the bit is too large. See
+    /// the struct level documentation for notes on panicking.
     pub fn try_insert(&mut self, bit: usize) -> bool {
         if bit >= Self::capacity() {
             return false;
         }
-        let index = bit / Self::item_size();
-        *self.inner.get_mut(index) =
-            self.inner.get(index) | Self::from(1 << (bit & Self::item_size() - 1));
+        let (index, bitmask) = Self::location(bit);
+        *self.inner.get_mut(index) = self.inner.get(index) | bitmask;
         true
     }
-    /// Disable the value `bit` in the set.
-    /// If `bit` is already disabled this is a no-op.
+    /// Disable the specified bit in the set. If the bit is already
+    /// disabled this is a no-op.
     pub fn remove(&mut self, bit: usize) {
         assert!(self.try_remove(bit), "BitSet::remove called on an integer bigger than capacity");
     }
-    /// Like remove, but does not panic if the bit is too large.
+    /// Like `remove`, but does not panic if the bit is too large.
     /// See the struct level documentation for notes on panicking.
     pub fn try_remove(&mut self, bit: usize) -> bool {
         if bit >= Self::capacity() {
             return false;
         }
-        let index = bit / Self::item_size();
-        *self.inner.get_mut(index) =
-            self.inner.get(index) & Self::from(!(1 << (bit & Self::item_size() - 1)));
+        let (index, bitmask) = Self::location(bit);
+        *self.inner.get_mut(index) = self.inner.get(index) & !bitmask;
         true
     }
-    /// Returns true if the bit `bit` is enabled.
-    /// If the bit is out of bounds this silently returns false.
+    /// Returns true if the specified bit is enabled. If the bit is
+    /// out of bounds this silently returns false.
     pub fn contains(&self, bit: usize) -> bool {
         self.try_contains(bit).unwrap_or(false)
     }
-    /// Returns true if the bit `bit` is enabled.
+    /// Returns true if the specified bit is enabled
     pub fn try_contains(&self, bit: usize) -> Option<bool> {
         if bit >= Self::capacity() {
             return None;
         }
 
-        let mask = Self::from(1 << (bit & Self::item_size() - 1));
-        Some(self.inner.get(bit / Self::item_size()) & mask == mask)
+        let (index, bitmask) = Self::location(bit);
+        Some(self.inner.get(index) & bitmask == bitmask)
     }
 
     /// Returns the total number of enabled bits
@@ -177,7 +181,7 @@ impl<T: BitArray> BitSet<T> {
         total
     }
 
-    /// Disable all bits in a range.
+    /// Disable all bits
     pub fn clear(&mut self) {
         for i in 0..T::len() {
             *self.inner.get_mut(i) = Default::default();
@@ -247,6 +251,63 @@ impl<T: BitArray> BitSet<T> {
         }
     }
 }
+impl<T: BitArray, N: Into<usize>> FromIterator<N> for BitSet<T> {
+    fn from_iter<I>(iter: I) -> Self
+        where I: IntoIterator<Item = N>
+    {
+        let mut set = BitSet::new();
+        for bit in iter.into_iter() {
+            set.insert(bit.into());
+        }
+        set
+    }
+}
+impl<T: BitArray> Iterator for BitSet<T> {
+    type Item = usize;
+
+    /// Iterator implementation for BitSet, guaranteed to remove and
+    /// return the items in ascending order
+    fn next(&mut self) -> Option<Self::Item> {
+        for index in 0..T::len() {
+            let item = self.inner.get_mut(index);
+            if !item.is_zero() {
+                let bitindex = item.trailing_zeros() as usize;
+
+                // E.g. 1010 & 1001 = 1000
+                *item = *item & *item - T::Item::one();
+
+                // Safe from overflows because one couldn't possibly add an item with this index if it did overflow
+                return Some(index * Self::item_size() + bitindex);
+            }
+        }
+        None
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.count_ones() as usize;
+        (len, Some(len))
+    }
+}
+impl<T: BitArray> DoubleEndedIterator for BitSet<T> {
+    /// Reversed iterator implementation for BitSet, guaranteed to
+    /// remove and return the items in descending order
+    fn next_back(&mut self) -> Option<Self::Item> {
+        for index in (0..T::len()).rev() {
+            let item = self.inner.get_mut(index);
+            if !item.is_zero() {
+                let bitindex = Self::item_size() - 1 - item.leading_zeros() as usize;
+
+                // E.g. 00101 & 11011 = 00001, same as remove procedure but using relative index
+                *item = *item & !(T::Item::one() << bitindex);
+
+                // Safe from overflows because one couldn't possibly add an item with this index if it did overflow
+                return Some(index * Self::item_size() + bitindex);
+            }
+        }
+        None
+    }
+}
+impl<T: BitArray> FusedIterator for BitSet<T> {}
+impl<T: BitArray> ExactSizeIterator for BitSet<T> {}
 
 #[cfg(test)]
 mod tests {
@@ -372,5 +433,19 @@ mod tests {
         for i in 3..16 {
             assert!(set.contains(i));
         }
+    }
+    #[test]
+    fn iter() {
+        let mut set: BitSet<[u8; 4]> = [30u8, 0, 4, 2, 12, 22, 23, 29].iter().map(|x| *x).collect();
+        assert_eq!(set.len(), 8); assert_eq!(set.next(), Some(0));
+        assert_eq!(set.len(), 7); assert_eq!(set.next_back(), Some(30));
+        assert_eq!(set.len(), 6); assert_eq!(set.next(), Some(2));
+        assert_eq!(set.len(), 5); assert_eq!(set.next_back(), Some(29));
+        assert_eq!(set.len(), 4); assert_eq!(set.next(), Some(4));
+        assert_eq!(set.len(), 3); assert_eq!(set.next_back(), Some(23));
+        assert_eq!(set.len(), 2); assert_eq!(set.next(), Some(12));
+        assert_eq!(set.len(), 1); assert_eq!(set.next_back(), Some(22));
+        assert_eq!(set.len(), 0); assert_eq!(set.next_back(), None);
+        assert_eq!(set.len(), 0); assert_eq!(set.next(), None);
     }
 }
