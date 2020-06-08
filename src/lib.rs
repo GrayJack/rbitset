@@ -3,6 +3,7 @@
 extern crate num_traits;
 
 use core::{
+    fmt,
     iter::{FromIterator, FusedIterator, ExactSizeIterator},
     mem,
     ops::{Bound, RangeBounds},
@@ -81,6 +82,19 @@ pub struct BitSet<T: BitArray> {
 impl<T: BitArray> From<T> for BitSet<T> {
     fn from(inner: T) -> Self {
         Self { inner }
+    }
+}
+impl<T: BitArray> fmt::Debug for BitSet<T>
+where
+    T::Item: fmt::Binary,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "BitSet ")?;
+        let mut list = f.debug_list();
+        for i in 0..T::len() {
+            list.entry(&format_args!("{:#0width$b}", self.inner.get(i), width=2 /* 0b */ + Self::item_size()));
+        }
+        list.finish()
     }
 }
 impl<T: BitArray> BitSet<T> {
@@ -312,6 +326,7 @@ impl<T: BitArray> ExactSizeIterator for BitSet<T> {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    extern crate alloc;
 
     #[test]
     fn repr() {
@@ -436,7 +451,7 @@ mod tests {
     }
     #[test]
     fn iter() {
-        let mut set: BitSet<[u8; 4]> = [30u8, 0, 4, 2, 12, 22, 23, 29].iter().map(|x| *x).collect();
+        let mut set: BitSet<[u8; 4]> = [30u8, 0, 4, 2, 12, 22, 23, 29].iter().copied().collect();
         assert_eq!(set.len(), 8); assert_eq!(set.next(), Some(0));
         assert_eq!(set.len(), 7); assert_eq!(set.next_back(), Some(30));
         assert_eq!(set.len(), 6); assert_eq!(set.next(), Some(2));
@@ -447,5 +462,12 @@ mod tests {
         assert_eq!(set.len(), 1); assert_eq!(set.next_back(), Some(22));
         assert_eq!(set.len(), 0); assert_eq!(set.next_back(), None);
         assert_eq!(set.len(), 0); assert_eq!(set.next(), None);
+    }
+
+    #[test]
+    fn debug() {
+        use self::alloc::format;
+        assert_eq!(format!("{:?}", (0u16..10).collect::<BitSet16>()), "BitSet [0b0000001111111111]");
+        assert_eq!(format!("{:#?}", (0u16..10).collect::<BitSet16>()), "BitSet [\n    0b0000001111111111,\n]");
     }
 }
