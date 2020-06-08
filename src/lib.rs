@@ -6,7 +6,7 @@ use core::{
     fmt,
     iter::{FromIterator, FusedIterator, ExactSizeIterator},
     mem,
-    ops::{Bound, RangeBounds},
+    ops::{Bound, Not, RangeBounds},
 };
 use num_traits::{Bounded, PrimInt, Zero, One};
 
@@ -75,7 +75,7 @@ pub type BitSet1024 = BitSet<[u64; 16]>;
 /// All non-try functions taking a bit parameter panics if the bit is bigger
 /// than the capacity of the set. For non-panicking versions, use `try_`.
 #[repr(transparent)]
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct BitSet<T: BitArray> {
     inner: T
 }
@@ -195,12 +195,13 @@ impl<T: BitArray> BitSet<T> {
         total
     }
 
-    /// Disable all bits
+    /// Disable all bits, probably faster than what `fill(.., false)` would do
     pub fn clear(&mut self) {
         for i in 0..T::len() {
             *self.inner.get_mut(i) = Default::default();
         }
     }
+
     /// Set all bits in a range.
     /// `fill(.., false)` is effectively the same as `clear()`.
     ///
@@ -322,6 +323,15 @@ impl<T: BitArray> DoubleEndedIterator for BitSet<T> {
 }
 impl<T: BitArray> FusedIterator for BitSet<T> {}
 impl<T: BitArray> ExactSizeIterator for BitSet<T> {}
+impl<T: BitArray> Not for BitSet<T> {
+    type Output = Self;
+    fn not(mut self) -> Self::Output {
+        for i in 0..T::len() {
+            *self.inner.get_mut(i) = !self.inner.get(i);
+        }
+        self
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -469,5 +479,11 @@ mod tests {
         use self::alloc::format;
         assert_eq!(format!("{:?}", (0u16..10).collect::<BitSet16>()), "BitSet [0b0000001111111111]");
         assert_eq!(format!("{:#?}", (0u16..10).collect::<BitSet16>()), "BitSet [\n    0b0000001111111111,\n]");
+    }
+
+    #[test]
+    fn not() {
+        assert_eq!((0u16..10).collect::<BitSet16>(), !(10u16..16).collect::<BitSet16>());
+        assert_eq!((10u16..16).collect::<BitSet16>(), !(0u16..10).collect::<BitSet16>());
     }
 }
