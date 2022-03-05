@@ -1,11 +1,18 @@
-extern crate cbitset;
-
-use cbitset::BitSet256;
+use rbitset::BitSet256;
 
 fn main() {
-    println!("The first {} bytes of \"hello\" are in \"eh\"",   strspn(b"hello", b"eh"));
-    println!("The first {} bytes of \"hello\" are in \"ehlo\"", strspn(b"hello", b"ehlo"));
-    println!("The first {} bytes of \"it works\" are letters",  strspn(b"it works", b"abcdefghijklmnopqrstuwxyz"));
+    println!(
+        "The first {} bytes of \"hello\" are in \"eh\"",
+        strspn(b"hello", b"eh")
+    );
+    println!(
+        "The first {} bytes of \"hello\" are in \"ehlo\"",
+        strspn(b"hello", b"ehlo")
+    );
+    println!(
+        "The first {} bytes of \"it works\" are letters",
+        strspn(b"it works", b"abcdefghijklmnopqrstuwxyz")
+    );
 }
 
 /// The C standard library function strspn, reimplemented in rust. It works by

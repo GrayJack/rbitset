@@ -1,14 +1,13 @@
 #![no_std]
 
-extern crate num_traits;
-
 use core::{
     fmt,
-    iter::{FromIterator, FusedIterator, ExactSizeIterator},
+    iter::{ExactSizeIterator, FromIterator, FusedIterator},
     mem,
     ops::{Bound, Not, RangeBounds},
 };
-use num_traits::{Bounded, PrimInt, Zero, One};
+
+use num_traits::{Bounded, One, PrimInt, Zero};
 
 /// An internal trait used to bypass the fact that rust does not yet
 /// have const generics
@@ -77,7 +76,7 @@ pub type BitSet1024 = BitSet<[u64; 16]>;
 #[repr(transparent)]
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct BitSet<T: BitArray> {
-    inner: T
+    inner: T,
 }
 impl<T: BitArray> From<T> for BitSet<T> {
     fn from(inner: T) -> Self {
@@ -85,14 +84,17 @@ impl<T: BitArray> From<T> for BitSet<T> {
     }
 }
 impl<T: BitArray> fmt::Debug for BitSet<T>
-where
-    T::Item: fmt::Binary,
+where T::Item: fmt::Binary
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "BitSet ")?;
         let mut list = f.debug_list();
         for i in 0..T::len() {
-            list.entry(&format_args!("{:#0width$b}", self.inner.get(i), width=2 /* 0b */ + Self::item_size()));
+            list.entry(&format_args!(
+                "{:#0width$b}",
+                self.inner.get(i),
+                width = 2 /* 0b */ + Self::item_size()
+            ));
         }
         list.finish()
     }
@@ -102,6 +104,7 @@ impl<T: BitArray> BitSet<T> {
     pub fn new() -> Self {
         Self::default()
     }
+
     /// Transmutes a reference to a borrowed bit array to a borrowed BitSet
     /// with the same lifetime
     pub fn from_ref(inner: &mut T) -> &mut Self {
@@ -109,10 +112,12 @@ impl<T: BitArray> BitSet<T> {
         // same
         unsafe { mem::transmute(inner) }
     }
+
     /// Return the inner integer array
     pub fn into_inner(self) -> T {
         self.inner
     }
+
     /// Returns the capacity of the set, in other words how many bits it can
     /// hold. This function may very well overflow if the size or length is too
     /// big, but if you're making that big allocations you probably got bigger
@@ -125,6 +130,7 @@ impl<T: BitArray> BitSet<T> {
     fn item_size() -> usize {
         mem::size_of::<T::Item>() * 8
     }
+
     /// Returns slot index along with the bitmask for the bit
     /// index to the slot this item was in
     fn location(bit: usize) -> (usize, T::Item) {
@@ -136,8 +142,12 @@ impl<T: BitArray> BitSet<T> {
     /// Enable the specified bit in the set. If the bit is already
     /// enabled this is a no-op.
     pub fn insert(&mut self, bit: usize) {
-        assert!(self.try_insert(bit), "BitSet::insert called on an integer bigger than capacity");
+        assert!(
+            self.try_insert(bit),
+            "BitSet::insert called on an integer bigger than capacity"
+        );
     }
+
     /// Like `insert`, but does not panic if the bit is too large. See
     /// the struct level documentation for notes on panicking.
     pub fn try_insert(&mut self, bit: usize) -> bool {
@@ -148,11 +158,16 @@ impl<T: BitArray> BitSet<T> {
         *self.inner.get_mut(index) = self.inner.get(index) | bitmask;
         true
     }
+
     /// Disable the specified bit in the set. If the bit is already
     /// disabled this is a no-op.
     pub fn remove(&mut self, bit: usize) {
-        assert!(self.try_remove(bit), "BitSet::remove called on an integer bigger than capacity");
+        assert!(
+            self.try_remove(bit),
+            "BitSet::remove called on an integer bigger than capacity"
+        );
     }
+
     /// Like `remove`, but does not panic if the bit is too large.
     /// See the struct level documentation for notes on panicking.
     pub fn try_remove(&mut self, bit: usize) -> bool {
@@ -163,11 +178,13 @@ impl<T: BitArray> BitSet<T> {
         *self.inner.get_mut(index) = self.inner.get(index) & !bitmask;
         true
     }
+
     /// Returns true if the specified bit is enabled. If the bit is
     /// out of bounds this silently returns false.
     pub fn contains(&self, bit: usize) -> bool {
         self.try_contains(bit).unwrap_or(false)
     }
+
     /// Returns true if the specified bit is enabled
     pub fn try_contains(&self, bit: usize) -> Option<bool> {
         if bit >= Self::capacity() {
@@ -186,6 +203,7 @@ impl<T: BitArray> BitSet<T> {
         }
         total
     }
+
     /// Returns the total number of disabled bits
     pub fn count_zeros(&self) -> u32 {
         let mut total = 0;
@@ -215,21 +233,27 @@ impl<T: BitArray> BitSet<T> {
                 i
             },
             Bound::Excluded(&i) => {
-                assert!(i + 1 <= Self::capacity(), "start bound is too big for capacity");
+                assert!(
+                    i + 1 <= Self::capacity(),
+                    "start bound is too big for capacity"
+                );
                 i + 1
-            }
+            },
         };
         let end = match range.end_bound() {
             Bound::Unbounded => Self::capacity(),
             Bound::Included(0) => return,
             Bound::Included(&i) => {
-                assert!(i - 1 <= Self::capacity(), "end bound is too big for capacity");
+                assert!(
+                    i - 1 <= Self::capacity(),
+                    "end bound is too big for capacity"
+                );
                 i - 1
             },
             Bound::Excluded(&i) => {
                 assert!(i <= Self::capacity(), "end bound is too big for capacity");
                 i
-            }
+            },
         };
 
         if start >= end {
@@ -242,7 +266,11 @@ impl<T: BitArray> BitSet<T> {
             let end_first = end_first.min(end);
             // println!("Doing initial unaligned from {} to {}", start, end_first);
             for bit in start..end_first {
-                if on { self.insert(bit); } else { self.remove(bit); }
+                if on {
+                    self.insert(bit);
+                } else {
+                    self.remove(bit);
+                }
             }
 
             if end == end_first {
@@ -256,20 +284,27 @@ impl<T: BitArray> BitSet<T> {
         let start_last = end - (end % Self::item_size());
         // println!("Doing aligned from {} to {}", start, start_last);
         for i in start / Self::item_size()..start_last / Self::item_size() {
-            *self.inner.get_mut(i) = if on { Bounded::max_value() } else { Default::default() };
+            *self.inner.get_mut(i) = if on {
+                Bounded::max_value()
+            } else {
+                Default::default()
+            };
         }
 
         // Unaligned write to the end
         // println!("Doing unaligned from {} to {}", start_last, end);
         for bit in start_last..end {
-            if on { self.insert(bit); } else { self.remove(bit); }
+            if on {
+                self.insert(bit);
+            } else {
+                self.remove(bit);
+            }
         }
     }
 }
 impl<T: BitArray, N: Into<usize>> FromIterator<N> for BitSet<T> {
     fn from_iter<I>(iter: I) -> Self
-        where I: IntoIterator<Item = N>
-    {
+    where I: IntoIterator<Item = N> {
         let mut set = BitSet::new();
         for bit in iter.into_iter() {
             set.insert(bit.into());
@@ -291,12 +326,14 @@ impl<T: BitArray> Iterator for BitSet<T> {
                 // E.g. 1010 & 1001 = 1000
                 *item = *item & *item - T::Item::one();
 
-                // Safe from overflows because one couldn't possibly add an item with this index if it did overflow
+                // Safe from overflows because one couldn't possibly add an item with this index if
+                // it did overflow
                 return Some(index * Self::item_size() + bitindex);
             }
         }
         None
     }
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.count_ones() as usize;
         (len, Some(len))
@@ -314,7 +351,8 @@ impl<T: BitArray> DoubleEndedIterator for BitSet<T> {
                 // E.g. 00101 & 11011 = 00001, same as remove procedure but using relative index
                 *item = *item & !(T::Item::one() << bitindex);
 
-                // Safe from overflows because one couldn't possibly add an item with this index if it did overflow
+                // Safe from overflows because one couldn't possibly add an item with this index if
+                // it did overflow
                 return Some(index * Self::item_size() + bitindex);
             }
         }
@@ -325,6 +363,7 @@ impl<T: BitArray> FusedIterator for BitSet<T> {}
 impl<T: BitArray> ExactSizeIterator for BitSet<T> {}
 impl<T: BitArray> Not for BitSet<T> {
     type Output = Self;
+
     fn not(mut self) -> Self::Output {
         for i in 0..T::len() {
             *self.inner.get_mut(i) = !self.inner.get(i);
@@ -462,28 +501,50 @@ mod tests {
     #[test]
     fn iter() {
         let mut set: BitSet<[u8; 4]> = [30u8, 0, 4, 2, 12, 22, 23, 29].iter().copied().collect();
-        assert_eq!(set.len(), 8); assert_eq!(set.next(), Some(0));
-        assert_eq!(set.len(), 7); assert_eq!(set.next_back(), Some(30));
-        assert_eq!(set.len(), 6); assert_eq!(set.next(), Some(2));
-        assert_eq!(set.len(), 5); assert_eq!(set.next_back(), Some(29));
-        assert_eq!(set.len(), 4); assert_eq!(set.next(), Some(4));
-        assert_eq!(set.len(), 3); assert_eq!(set.next_back(), Some(23));
-        assert_eq!(set.len(), 2); assert_eq!(set.next(), Some(12));
-        assert_eq!(set.len(), 1); assert_eq!(set.next_back(), Some(22));
-        assert_eq!(set.len(), 0); assert_eq!(set.next_back(), None);
-        assert_eq!(set.len(), 0); assert_eq!(set.next(), None);
+        assert_eq!(set.len(), 8);
+        assert_eq!(set.next(), Some(0));
+        assert_eq!(set.len(), 7);
+        assert_eq!(set.next_back(), Some(30));
+        assert_eq!(set.len(), 6);
+        assert_eq!(set.next(), Some(2));
+        assert_eq!(set.len(), 5);
+        assert_eq!(set.next_back(), Some(29));
+        assert_eq!(set.len(), 4);
+        assert_eq!(set.next(), Some(4));
+        assert_eq!(set.len(), 3);
+        assert_eq!(set.next_back(), Some(23));
+        assert_eq!(set.len(), 2);
+        assert_eq!(set.next(), Some(12));
+        assert_eq!(set.len(), 1);
+        assert_eq!(set.next_back(), Some(22));
+        assert_eq!(set.len(), 0);
+        assert_eq!(set.next_back(), None);
+        assert_eq!(set.len(), 0);
+        assert_eq!(set.next(), None);
     }
 
     #[test]
     fn debug() {
         use self::alloc::format;
-        assert_eq!(format!("{:?}", (0u16..10).collect::<BitSet16>()), "BitSet [0b0000001111111111]");
-        assert_eq!(format!("{:#?}", (0u16..10).collect::<BitSet16>()), "BitSet [\n    0b0000001111111111,\n]");
+        assert_eq!(
+            format!("{:?}", (0u16..10).collect::<BitSet16>()),
+            "BitSet [0b0000001111111111]"
+        );
+        assert_eq!(
+            format!("{:#?}", (0u16..10).collect::<BitSet16>()),
+            "BitSet [\n    0b0000001111111111,\n]"
+        );
     }
 
     #[test]
     fn not() {
-        assert_eq!((0u16..10).collect::<BitSet16>(), !(10u16..16).collect::<BitSet16>());
-        assert_eq!((10u16..16).collect::<BitSet16>(), !(0u16..10).collect::<BitSet16>());
+        assert_eq!(
+            (0u16..10).collect::<BitSet16>(),
+            !(10u16..16).collect::<BitSet16>()
+        );
+        assert_eq!(
+            (10u16..16).collect::<BitSet16>(),
+            !(0u16..10).collect::<BitSet16>()
+        );
     }
 }
