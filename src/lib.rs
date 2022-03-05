@@ -7,63 +7,24 @@ use core::{
     ops::{Bound, Not, RangeBounds},
 };
 
-use num_traits::{Bounded, One, PrimInt, Zero};
-
-/// An internal trait used to bypass the fact that rust does not yet
-/// have const generics
-pub trait BitArray: Default + Clone + Copy {
-    /// The item type this array holds
-    type Item: Default + PrimInt;
-    /// Returns how many elements this array can hold
-    fn len() -> usize;
-    /// Access the element at a specified index.
-    ///
-    /// # Panics
-    /// Panics if the index is bigger than the length
-    fn get(&self, index: usize) -> Self::Item;
-    /// Access a mutable reference to the element at a specified index
-    ///
-    /// # Panics
-    /// Panics if the index is bigger than the length
-    fn get_mut(&mut self, index: usize) -> &mut Self::Item;
-}
-
-macro_rules! impl_arrays {
-    ($($len:expr),*) => {
-        $(
-            impl<T: Default + PrimInt> BitArray for [T; $len] {
-                type Item = T;
-
-                fn len() -> usize { $len }
-                fn get(&self, index: usize) -> Self::Item {
-                    self[index]
-                }
-                fn get_mut(&mut self, index: usize) -> &mut Self::Item {
-                    &mut self[index]
-                }
-            }
-        )*
-    }
-}
-
-impl_arrays!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+use num_traits::{Bounded, PrimInt};
 
 /// A bit set able to hold up to 8 elements
-pub type BitSet8 = BitSet<[u8; 1]>;
+pub type BitSet8 = BitSet<u8, 1>;
 /// A bit set able to hold up to 16 elements
-pub type BitSet16 = BitSet<[u16; 1]>;
+pub type BitSet16 = BitSet<u16, 1>;
 /// A bit set able to hold up to 32 elements
-pub type BitSet32 = BitSet<[u32; 1]>;
+pub type BitSet32 = BitSet<u32, 1>;
 /// A bit set able to hold up to 64 elements
-pub type BitSet64 = BitSet<[u64; 1]>;
+pub type BitSet64 = BitSet<u64, 1>;
 /// A bit set able to hold up to 128 elements
-pub type BitSet128 = BitSet<[u64; 2]>;
+pub type BitSet128 = BitSet<u64, 2>;
 /// A bit set able to hold up to 256 elements
-pub type BitSet256 = BitSet<[u64; 4]>;
+pub type BitSet256 = BitSet<u64, 4>;
 /// A bit set able to hold up to 512 elements
-pub type BitSet512 = BitSet<[u64; 8]>;
+pub type BitSet512 = BitSet<u64, 8>;
 /// A bit set able to hold up to 1024 elements
-pub type BitSet1024 = BitSet<[u64; 16]>;
+pub type BitSet1024 = BitSet<u64, 16>;
 
 /// The bit set itself
 ///
@@ -74,47 +35,61 @@ pub type BitSet1024 = BitSet<[u64; 16]>;
 /// All non-try functions taking a bit parameter panics if the bit is bigger
 /// than the capacity of the set. For non-panicking versions, use `try_`.
 #[repr(transparent)]
-#[derive(Default, Clone, Copy, PartialEq, Eq)]
-pub struct BitSet<T: BitArray> {
-    inner: T,
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct BitSet<T, const N: usize> {
+    inner: [T; N],
 }
-impl<T: BitArray> From<T> for BitSet<T> {
-    fn from(inner: T) -> Self {
+
+impl<T: PrimInt + Default, const N: usize> Default for BitSet<T, N> {
+    fn default() -> Self {
+        Self {
+            inner: [Default::default(); N],
+        }
+    }
+}
+
+impl<T: PrimInt, const N: usize> From<[T; N]> for BitSet<T, N> {
+    fn from(inner: [T; N]) -> Self {
         Self { inner }
     }
 }
-impl<T: BitArray> fmt::Debug for BitSet<T>
-where T::Item: fmt::Binary
+
+impl<T, const N: usize> fmt::Debug for BitSet<T, N>
+where T: Copy + Clone + fmt::Binary
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "BitSet ")?;
         let mut list = f.debug_list();
-        for i in 0..T::len() {
+
+        for item in self.inner.iter() {
             list.entry(&format_args!(
                 "{:#0width$b}",
-                self.inner.get(i),
+                item,
                 width = 2 /* 0b */ + Self::item_size()
             ));
         }
+
         list.finish()
     }
 }
-impl<T: BitArray> BitSet<T> {
+
+impl<T: PrimInt + Default, const N: usize> BitSet<T, N> {
     /// Create an empty instance
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Transmutes a reference to a borrowed bit array to a borrowed BitSet
-    /// with the same lifetime
-    pub fn from_ref(inner: &mut T) -> &mut Self {
-        // This should be completely safe as the memory representation is the
-        // same
-        unsafe { mem::transmute(inner) }
+    /// Disable all bits, probably faster than what `fill(.., false)` would do
+    pub fn clear(&mut self) {
+        for item in self.inner.iter_mut() {
+            *item = Default::default()
+        }
     }
+}
 
+impl<T, const N: usize> BitSet<T, N> {
     /// Return the inner integer array
-    pub fn into_inner(self) -> T {
+    pub fn into_inner(self) -> [T; N] {
         self.inner
     }
 
@@ -122,21 +97,59 @@ impl<T: BitArray> BitSet<T> {
     /// hold. This function may very well overflow if the size or length is too
     /// big, but if you're making that big allocations you probably got bigger
     /// things to worry about.
-    pub fn capacity() -> usize {
-        T::len() * Self::item_size()
+    pub const fn capacity() -> usize {
+        N * Self::item_size()
     }
 
     /// Returns the bit size of each item
-    fn item_size() -> usize {
-        mem::size_of::<T::Item>() * 8
+    const fn item_size() -> usize {
+        mem::size_of::<T>() * 8
+    }
+}
+
+impl<T: PrimInt, const N: usize> BitSet<T, N> {
+    /// Transmutes a reference to a borrowed bit array to a borrowed BitSet
+    /// with the same lifetime
+    pub fn from_ref(inner: &mut [T; N]) -> &mut Self {
+        // This should be completely safe as the memory representation is the
+        // same
+        unsafe { mem::transmute(inner) }
     }
 
     /// Returns slot index along with the bitmask for the bit
     /// index to the slot this item was in
-    fn location(bit: usize) -> (usize, T::Item) {
+    fn location(bit: usize) -> (usize, T) {
         let index = bit / Self::item_size();
-        let bitmask = T::Item::one() << (bit & (Self::item_size() - 1));
+        let bitmask = T::one() << (bit & (Self::item_size() - 1));
         (index, bitmask)
+    }
+
+    /// Like `insert`, but does not panic if the bit is too large. See
+    /// the struct level documentation for notes on panicking.
+    pub fn try_insert(&mut self, bit: usize) -> bool {
+        if bit >= Self::capacity() {
+            return false;
+        }
+        let (index, bitmask) = Self::location(bit);
+        match self.inner.get_mut(index) {
+            Some(v) => *v = (*v) | bitmask,
+            None => (),
+        }
+        true
+    }
+
+    /// Like `remove`, but does not panic if the bit is too large.
+    /// See the struct level documentation for notes on panicking.
+    pub fn try_remove(&mut self, bit: usize) -> bool {
+        if bit >= Self::capacity() {
+            return false;
+        }
+        let (index, bitmask) = Self::location(bit);
+        match self.inner.get_mut(index) {
+            Some(v) => *v = (*v) & !bitmask,
+            None => (),
+        }
+        true
     }
 
     /// Enable the specified bit in the set. If the bit is already
@@ -148,17 +161,6 @@ impl<T: BitArray> BitSet<T> {
         );
     }
 
-    /// Like `insert`, but does not panic if the bit is too large. See
-    /// the struct level documentation for notes on panicking.
-    pub fn try_insert(&mut self, bit: usize) -> bool {
-        if bit >= Self::capacity() {
-            return false;
-        }
-        let (index, bitmask) = Self::location(bit);
-        *self.inner.get_mut(index) = self.inner.get(index) | bitmask;
-        true
-    }
-
     /// Disable the specified bit in the set. If the bit is already
     /// disabled this is a no-op.
     pub fn remove(&mut self, bit: usize) {
@@ -166,17 +168,6 @@ impl<T: BitArray> BitSet<T> {
             self.try_remove(bit),
             "BitSet::remove called on an integer bigger than capacity"
         );
-    }
-
-    /// Like `remove`, but does not panic if the bit is too large.
-    /// See the struct level documentation for notes on panicking.
-    pub fn try_remove(&mut self, bit: usize) -> bool {
-        if bit >= Self::capacity() {
-            return false;
-        }
-        let (index, bitmask) = Self::location(bit);
-        *self.inner.get_mut(index) = self.inner.get(index) & !bitmask;
-        true
     }
 
     /// Returns true if the specified bit is enabled. If the bit is
@@ -192,14 +183,14 @@ impl<T: BitArray> BitSet<T> {
         }
 
         let (index, bitmask) = Self::location(bit);
-        Some(self.inner.get(index) & bitmask == bitmask)
+        Some(*self.inner.get(index)? & bitmask == bitmask)
     }
 
     /// Returns the total number of enabled bits
     pub fn count_ones(&self) -> u32 {
         let mut total = 0;
-        for i in 0..T::len() {
-            total += self.inner.get(i).count_ones();
+        for item in self.inner.iter() {
+            total += item.count_ones();
         }
         total
     }
@@ -207,19 +198,16 @@ impl<T: BitArray> BitSet<T> {
     /// Returns the total number of disabled bits
     pub fn count_zeros(&self) -> u32 {
         let mut total = 0;
-        for i in 0..T::len() {
-            total += self.inner.get(i).count_zeros();
+
+        for item in self.inner.iter() {
+            total += item.count_zeros();
         }
+
         total
     }
+}
 
-    /// Disable all bits, probably faster than what `fill(.., false)` would do
-    pub fn clear(&mut self) {
-        for i in 0..T::len() {
-            *self.inner.get_mut(i) = Default::default();
-        }
-    }
-
+impl<T: Default + PrimInt, const N: usize> BitSet<T, N> {
     /// Set all bits in a range.
     /// `fill(.., false)` is effectively the same as `clear()`.
     ///
@@ -281,7 +269,7 @@ impl<T: BitArray> BitSet<T> {
         let start_last = end - (end % Self::item_size());
         // println!("Doing aligned from {} to {}", start, start_last);
         for i in start / Self::item_size()..start_last / Self::item_size() {
-            *self.inner.get_mut(i) = if on {
+            self.inner[i] = if on {
                 Bounded::max_value()
             } else {
                 Default::default()
@@ -299,9 +287,10 @@ impl<T: BitArray> BitSet<T> {
         }
     }
 }
-impl<T: BitArray, N: Into<usize>> FromIterator<N> for BitSet<T> {
+
+impl<T: PrimInt + Default, U: Into<usize>, const N: usize> FromIterator<U> for BitSet<T, N> {
     fn from_iter<I>(iter: I) -> Self
-    where I: IntoIterator<Item = N> {
+    where I: IntoIterator<Item = U> {
         let mut set = BitSet::new();
         for bit in iter.into_iter() {
             set.insert(bit.into());
@@ -309,25 +298,26 @@ impl<T: BitArray, N: Into<usize>> FromIterator<N> for BitSet<T> {
         set
     }
 }
-impl<T: BitArray> Iterator for BitSet<T> {
+
+impl<T: PrimInt, const N: usize> Iterator for BitSet<T, N> {
     type Item = usize;
 
     /// Iterator implementation for BitSet, guaranteed to remove and
     /// return the items in ascending order
     fn next(&mut self) -> Option<Self::Item> {
-        for index in 0..T::len() {
-            let item = self.inner.get_mut(index);
+        for (index, item) in self.inner.iter_mut().enumerate() {
             if !item.is_zero() {
                 let bitindex = item.trailing_zeros() as usize;
 
                 // E.g. 1010 & 1001 = 1000
-                *item = *item & (*item - T::Item::one());
+                *item = *item & (*item - T::one());
 
                 // Safe from overflows because one couldn't possibly add an item with this index if
                 // it did overflow
                 return Some(index * Self::item_size() + bitindex);
             }
         }
+
         None
     }
 
@@ -336,17 +326,17 @@ impl<T: BitArray> Iterator for BitSet<T> {
         (len, Some(len))
     }
 }
-impl<T: BitArray> DoubleEndedIterator for BitSet<T> {
+
+impl<T: PrimInt, const N: usize> DoubleEndedIterator for BitSet<T, N> {
     /// Reversed iterator implementation for BitSet, guaranteed to
     /// remove and return the items in descending order
     fn next_back(&mut self) -> Option<Self::Item> {
-        for index in (0..T::len()).rev() {
-            let item = self.inner.get_mut(index);
+        for (index, item) in self.inner.iter_mut().enumerate().rev() {
             if !item.is_zero() {
                 let bitindex = Self::item_size() - 1 - item.leading_zeros() as usize;
 
                 // E.g. 00101 & 11011 = 00001, same as remove procedure but using relative index
-                *item = *item & !(T::Item::one() << bitindex);
+                *item = *item & !(T::one() << bitindex);
 
                 // Safe from overflows because one couldn't possibly add an item with this index if
                 // it did overflow
@@ -356,15 +346,18 @@ impl<T: BitArray> DoubleEndedIterator for BitSet<T> {
         None
     }
 }
-impl<T: BitArray> FusedIterator for BitSet<T> {}
-impl<T: BitArray> ExactSizeIterator for BitSet<T> {}
-impl<T: BitArray> Not for BitSet<T> {
+
+impl<T: PrimInt, const N: usize> FusedIterator for BitSet<T, N> {}
+impl<T: PrimInt, const N: usize> ExactSizeIterator for BitSet<T, N> {}
+
+impl<T: PrimInt, const N: usize> Not for BitSet<T, N> {
     type Output = Self;
 
     fn not(mut self) -> Self::Output {
-        for i in 0..T::len() {
-            *self.inner.get_mut(i) = !self.inner.get(i);
+        for item in self.inner.iter_mut() {
+            *item = !(*item);
         }
+
         self
     }
 }
@@ -384,6 +377,7 @@ mod tests {
         assert_eq!(mem::size_of::<BitSet256>(), 32);
         assert_eq!(mem::size_of::<BitSet512>(), 64);
     }
+
     #[test]
     fn capacity() {
         assert_eq!(BitSet8::capacity(), 8);
@@ -394,17 +388,20 @@ mod tests {
         assert_eq!(BitSet256::capacity(), 256);
         assert_eq!(BitSet512::capacity(), 512);
     }
+
     #[test]
     fn try_too_big() {
         let mut set = BitSet8::new();
         assert!(!set.try_insert(8));
     }
+
     #[test]
     #[should_panic]
     fn panic_too_big() {
         let mut set = BitSet128::new();
         set.insert(128);
     }
+
     #[test]
     fn insert() {
         let mut set = BitSet128::new();
@@ -422,6 +419,7 @@ mod tests {
         assert!(set.contains(82));
         assert!(set.contains(127));
     }
+
     #[test]
     fn remove() {
         let mut set = BitSet32::new();
@@ -433,6 +431,7 @@ mod tests {
         assert!(set.contains(12));
         assert!(!set.contains(17));
     }
+
     #[test]
     fn clear() {
         let mut set = BitSet64::new();
@@ -444,6 +443,7 @@ mod tests {
         assert!(!set.contains(35));
         assert!(!set.contains(42));
     }
+
     #[test]
     fn count_ones_and_zeros() {
         let mut set = BitSet8::new();
@@ -452,12 +452,13 @@ mod tests {
         assert_eq!(set.count_ones(), 2);
         assert_eq!(set.count_zeros(), 8 - 2);
     }
+
     #[test]
     fn fill() {
         // Care must be taken when changing the `range` function, as this test
         // won't detect if it actually does as many aligned writes as it can.
 
-        let mut set = BitSet::<[u8; 2]>::new();
+        let mut set = BitSet::<u8, 2>::new();
 
         // Aligned
         set.fill(.., true);
@@ -495,9 +496,10 @@ mod tests {
             assert!(set.contains(i));
         }
     }
+
     #[test]
     fn iter() {
-        let mut set: BitSet<[u8; 4]> = [30u8, 0, 4, 2, 12, 22, 23, 29].iter().copied().collect();
+        let mut set: BitSet<u8, 4> = [30u8, 0, 4, 2, 12, 22, 23, 29].iter().copied().collect();
         assert_eq!(set.len(), 8);
         assert_eq!(set.next(), Some(0));
         assert_eq!(set.len(), 7);
