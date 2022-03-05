@@ -1,0 +1,64 @@
+name: Check and Test
+
+on: [push, pull_request]
+
+jobs:
+  build-linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable, nightly]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        override: true
+        profile: minimal
+    - name: Cache cargo output
+      uses: Swatinem/rust-cache@v1
+    - name: Check
+      run: cargo check
+    - name: Check and Run tests
+      run: cargo test
+
+  build-macos:
+    name: MacOS
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        rust: [stable, nightly]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        override: true
+        profile: minimal
+    - name: Cache cargo output
+      uses: Swatinem/rust-cache@v1
+    - name: Check
+      run: cargo check
+    - name: Check and Run tests
+      run: cargo test
+
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        rust: [stable, nightly]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        override: true
+        profile: minimal
+    - name: Cache cargo output
+      uses: Swatinem/rust-cache@v1
+    - name: Check
+      run: cargo check
+    - name: Check and Run tests
+      run: cargo test
