@@ -37,9 +37,6 @@ jobs:
       env:
         RUSTDOCFLAGS: --cfg _doc
 
-    - name: Build C Documentation
-      uses: mattnotmitt/doxygen-action@v1.9
-
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@v3
       with:
