@@ -1,0 +1,11 @@
+pre_bump_hooks = ["cargo fmt", "cargo clippy", "cargo bump {{version}}"]
+post_bump_hooks = ["git push", "git push origin v{{version}}", "cargo publish"]
+
+[commit_types]
+
+[changelog]
+path = "CHANGELOG.md"
+template = ".changelog_template"
+authors = [{ username = "GrayJack", signature = "Eric Shimizu Karbstein" }]
+
+[bump_profiles]
