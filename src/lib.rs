@@ -135,7 +135,7 @@ impl<T: BitArray> BitSet<T> {
     /// index to the slot this item was in
     fn location(bit: usize) -> (usize, T::Item) {
         let index = bit / Self::item_size();
-        let bitmask = T::Item::one() << (bit & Self::item_size() - 1);
+        let bitmask = T::Item::one() << (bit & (Self::item_size() - 1));
         (index, bitmask)
     }
 
@@ -233,10 +233,7 @@ impl<T: BitArray> BitSet<T> {
                 i
             },
             Bound::Excluded(&i) => {
-                assert!(
-                    i + 1 <= Self::capacity(),
-                    "start bound is too big for capacity"
-                );
+                assert!(i < Self::capacity(), "start bound is too big for capacity");
                 i + 1
             },
         };
@@ -324,7 +321,7 @@ impl<T: BitArray> Iterator for BitSet<T> {
                 let bitindex = item.trailing_zeros() as usize;
 
                 // E.g. 1010 & 1001 = 1000
-                *item = *item & *item - T::Item::one();
+                *item = *item & (*item - T::Item::one());
 
                 // Safe from overflows because one couldn't possibly add an item with this index if
                 // it did overflow
