@@ -3,6 +3,9 @@
 A bit set, being able to hold a fixed amount of booleans in an array of
 integers.
 
+This is a fork of [cbitset](https://crates.io/crates/cbitset) that reimplements
+the BitSet type using const generics
+
 ## Alternatives
 
 There are already quite a few libraries out there for bit sets, but I can't seem
