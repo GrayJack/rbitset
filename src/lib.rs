@@ -299,6 +299,14 @@ impl<T: PrimInt + Default, U: Into<usize>, const N: usize> FromIterator<U> for B
     }
 }
 
+impl<T: PrimInt, U: Into<usize>, const N: usize> Extend<U> for BitSet<T, N> {
+    fn extend<I: IntoIterator<Item = U>>(&mut self, iter: I) {
+        for bit in iter.into_iter() {
+            self.insert(bit.into());
+        }
+    }
+}
+
 impl<T: PrimInt, const N: usize> IntoIterator for BitSet<T, N> {
     type IntoIter = IntoIter<T, N>;
     type Item = usize;
