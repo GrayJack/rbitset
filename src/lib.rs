@@ -73,9 +73,29 @@ where T: Copy + Clone + fmt::Binary
     }
 }
 
+/// Removed hacking macros just to add another one LOL
+/// FIXME: Use const trait implementation when that is stabilized
+macro_rules! impl_new {
+    ($($t:ty)+) => {
+        $(
+        impl<const N: usize> BitSet<$t, N> {
+            /// Create an empty instance of [`BitSet`]
+            pub const fn new() -> Self {
+                Self { inner: [0; N] }
+            }
+        }
+        )+
+    };
+}
+
+impl_new!(i8 i16 i32 i64 i128 isize);
+impl_new!(u8 u16 u32 u64 u128 usize);
+
 impl<T: PrimInt + Default, const N: usize> BitSet<T, N> {
-    /// Create an empty instance
-    pub fn new() -> Self {
+    /// Create an empty instance with default value
+    ///
+    /// This function is the same as [`new`](BitSet::new) but without the constness.
+    pub fn with_default() -> Self {
         Self::default()
     }
 
@@ -291,7 +311,7 @@ impl<T: Default + PrimInt, const N: usize> BitSet<T, N> {
 impl<T: PrimInt + Default, U: Into<usize>, const N: usize> FromIterator<U> for BitSet<T, N> {
     fn from_iter<I>(iter: I) -> Self
     where I: IntoIterator<Item = U> {
-        let mut set = BitSet::new();
+        let mut set = BitSet::with_default();
         for bit in iter.into_iter() {
             set.insert(bit.into());
         }
