@@ -206,6 +206,16 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         Some(*self.inner.get(index)? & bitmask == bitmask)
     }
 
+    /// Returns the number of elements in the set.
+    pub fn len(&self) -> usize {
+        self.count_ones() as usize
+    }
+
+    /// Returns `true` if the set contains no elements.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Returns the total number of enabled bits
     pub fn count_ones(&self) -> u32 {
         let mut total = 0;
