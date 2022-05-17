@@ -235,6 +235,11 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
 
         total
     }
+
+    /// Returns a iterator
+    pub fn iter(&self) -> Iter<'_, T, N> {
+        Iter::new(self)
+    }
 }
 
 impl<T: Default + PrimInt, const N: usize> BitSet<T, N> {
@@ -346,6 +351,15 @@ impl<T: PrimInt, const N: usize> IntoIterator for BitSet<T, N> {
     }
 }
 
+impl<'a, T: PrimInt, const N: usize> IntoIterator for &'a BitSet<T, N> {
+    type IntoIter = Iter<'a, T, N>;
+    type Item = usize;
+
+    fn into_iter(self) -> Self::IntoIter {
+        crate::Iter::new(self)
+    }
+}
+
 impl<T: PrimInt, const N: usize> Not for BitSet<T, N> {
     type Output = Self;
 
@@ -358,6 +372,8 @@ impl<T: PrimInt, const N: usize> Not for BitSet<T, N> {
     }
 }
 
+/// Iterator implementation for BitSet, guaranteed to remove and
+/// return the items in ascending order
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct IntoIter<T, const N: usize>(BitSet<T, N>);
@@ -383,8 +399,6 @@ where T: Copy + Clone + fmt::Binary
 impl<T: PrimInt, const N: usize> Iterator for IntoIter<T, N> {
     type Item = usize;
 
-    /// Iterator implementation for BitSet, guaranteed to remove and
-    /// return the items in ascending order
     fn next(&mut self) -> Option<Self::Item> {
         for (index, item) in self.0.inner.iter_mut().enumerate() {
             if !item.is_zero() {
@@ -409,8 +423,6 @@ impl<T: PrimInt, const N: usize> Iterator for IntoIter<T, N> {
 }
 
 impl<T: PrimInt, const N: usize> DoubleEndedIterator for IntoIter<T, N> {
-    /// Reversed iterator implementation for BitSet, guaranteed to
-    /// remove and return the items in descending order
     fn next_back(&mut self) -> Option<Self::Item> {
         for (index, item) in self.0.inner.iter_mut().enumerate().rev() {
             if !item.is_zero() {
@@ -430,6 +442,85 @@ impl<T: PrimInt, const N: usize> DoubleEndedIterator for IntoIter<T, N> {
 
 impl<T: PrimInt, const N: usize> FusedIterator for IntoIter<T, N> {}
 impl<T: PrimInt, const N: usize> ExactSizeIterator for IntoIter<T, N> {}
+
+/// Iterator over the set without consuming it
+#[derive(Clone)]
+pub struct Iter<'a, T, const N: usize> {
+    borrow: &'a BitSet<T, N>,
+    bit: usize,
+    passed_count: usize,
+}
+
+impl<'a, T: PrimInt, const N: usize> Iter<'a, T, N> {
+    fn new(bitset: &'a BitSet<T, N>) -> Self {
+        Self {
+            borrow: bitset,
+            bit: 0,
+            passed_count: 0,
+        }
+    }
+}
+
+impl<'a, T, const N: usize> fmt::Debug for Iter<'a, T, N>
+where T: Copy + Clone + fmt::Binary
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut list = f.debug_list();
+
+        for item in self.borrow.inner.iter() {
+            list.entry(&format_args!(
+                "{:#0width$b}",
+                item,
+                width = 2 /* 0b */ + BitSet::<T, N>::item_size()
+            ));
+        }
+
+        list.finish()
+    }
+}
+
+impl<'a, T: PrimInt, const N: usize> Iterator for Iter<'a, T, N> {
+    type Item = usize;
+
+    /// Iterator implementation for BitSet, guaranteed to remove and
+    /// return the items in ascending order
+    fn next(&mut self) -> Option<Self::Item> {
+        while !self.borrow.try_contains(self.bit)? {
+            self.bit = self.bit.saturating_add(1);
+        }
+
+        let res = self.bit;
+
+        self.bit = self.bit.saturating_add(1);
+        self.passed_count = self.passed_count.saturating_add(1);
+
+        Some(res)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.borrow.len() - self.passed_count;
+        (len, Some(len))
+    }
+}
+
+impl<'a, T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'a, T, N> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.bit = self.bit.saturating_sub(2);
+        while !self.borrow.try_contains(self.bit)? {
+            self.bit = self.bit.saturating_sub(1);
+        }
+
+        let res = self.bit;
+
+        self.bit = self.bit.saturating_sub(1);
+        self.passed_count = self.passed_count.saturating_sub(1);
+
+        Some(res)
+    }
+}
+
+impl<'a, T: PrimInt, const N: usize> FusedIterator for Iter<'a, T, N> {}
+impl<'a, T: PrimInt, const N: usize> ExactSizeIterator for Iter<'a, T, N> {}
 
 
 #[cfg(test)]
@@ -569,6 +660,44 @@ mod tests {
 
     #[test]
     fn iter() {
+        let set: BitSet<u8, 4> = [30u8, 0, 4, 2, 12, 22, 23, 29].iter().copied().collect();
+
+        // Back and forth
+        let mut iter = set.iter();
+        assert_eq!(iter.len(), 8);
+        assert_eq!(iter.next(), Some(0));
+        assert_eq!(iter.len(), 7);
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.len(), 6);
+        assert_eq!(iter.next_back(), Some(0));
+        assert_eq!(iter.len(), 7);
+
+        // One way
+        let mut iter = set.iter();
+        assert_eq!(iter.len(), 8);
+        assert_eq!(iter.next(), Some(0));
+        assert_eq!(iter.len(), 7);
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.len(), 6);
+        assert_eq!(iter.next(), Some(4));
+        assert_eq!(iter.len(), 5);
+        assert_eq!(iter.next(), Some(12));
+        assert_eq!(iter.len(), 4);
+        assert_eq!(iter.next(), Some(22));
+        assert_eq!(iter.len(), 3);
+        assert_eq!(iter.next(), Some(23));
+        assert_eq!(iter.len(), 2);
+        assert_eq!(iter.next(), Some(29));
+        assert_eq!(iter.len(), 1);
+        assert_eq!(iter.next(), Some(30));
+        assert_eq!(iter.len(), 0);
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.len(), 0);
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn into_iter() {
         let set: BitSet<u8, 4> = [30u8, 0, 4, 2, 12, 22, 23, 29].iter().copied().collect();
         let mut iter = set.into_iter();
         assert_eq!(iter.len(), 8);
