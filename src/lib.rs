@@ -310,6 +310,34 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         total
     }
 
+    /// Visits the values representing the intersection,
+    /// i.e., the values that are both in `self` and `other`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let a = BitSet8::from_iter([1u8, 2, 3]);
+    /// let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+    ///
+    /// for x in a.intersection(&b) {
+    ///     println!("{x}");
+    /// }
+    ///
+    /// let intersection: BitSet8 = a.intersection(&b).collect();
+    /// let test = BitSet8::from_iter([2u8, 3]);
+    /// assert_eq!(intersection, test);
+    /// ```
+    pub fn intersection<'a, U: PrimInt, const M: usize>(
+        &'a self, other: &'a BitSet<U, M>,
+    ) -> Intersection<'a, T, U, N, M> {
+        Intersection {
+            iter: self.iter(),
+            other,
+        }
+    }
+
     /// Returns a iterator that doesn't consume the values
     pub fn iter(&self) -> Iter<'_, T, N> {
         Iter::new(self)
@@ -596,6 +624,74 @@ impl<'a, T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'a, T, N> {
 impl<'a, T: PrimInt, const N: usize> FusedIterator for Iter<'a, T, N> {}
 impl<'a, T: PrimInt, const N: usize> ExactSizeIterator for Iter<'a, T, N> {}
 
+/// A lazy iterator producing elements in the intersection of `BitSet`s.
+///
+/// This `struct` is created by the [`intersection`] method on [`BitSet`].
+/// See its documentation for more.
+///
+/// [`intersection`]: BitSet::intersection
+///
+/// # Examples
+///
+/// ```
+/// use rbitset::BitSet8;
+///
+/// let a = BitSet8::from_iter([1u8, 2, 3]);
+/// let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+///
+/// let mut intersection = a.intersection(&b);
+/// ```
+#[must_use = "this returns the intersection as an iterator, without modifying either input set"]
+#[derive(Clone)]
+pub struct Intersection<'a, T, U, const N: usize, const M: usize>
+where
+    T: PrimInt + 'a,
+    U: PrimInt + 'a,
+{
+    // iterator of the first set
+    iter:  Iter<'a, T, N>,
+    // the second set
+    other: &'a BitSet<U, M>,
+}
+
+impl<'a, T, U, const N: usize, const M: usize> fmt::Debug for Intersection<'a, T, U, N, M>
+where
+    T: PrimInt,
+    U: PrimInt,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_set().entries(self.clone()).finish()
+    }
+}
+
+impl<'a, T, U, const N: usize, const M: usize> Iterator for Intersection<'a, T, U, N, M>
+where
+    T: PrimInt + 'a,
+    U: PrimInt + 'a,
+{
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let elt = self.iter.next()?;
+            if self.other.contains(elt) {
+                return Some(elt);
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (_, upper) = self.iter.size_hint();
+        (0, upper)
+    }
+}
+
+impl<T, U, const N: usize, const M: usize> FusedIterator for Intersection<'_, T, U, N, M>
+where
+    T: PrimInt,
+    U: PrimInt,
+{
+}
 
 #[cfg(test)]
 mod tests {
@@ -818,6 +914,16 @@ mod tests {
         assert_eq!(iter.next_back(), None);
         assert_eq!(iter.len(), 0);
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn intersect() {
+        let a = BitSet8::from_iter([1u8, 2, 3]);
+        let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+
+        let intersection: BitSet8 = a.intersection(&b).collect();
+        let test = BitSet8::from_iter([2u8, 3]);
+        assert_eq!(intersection, test);
     }
 
     #[test]
