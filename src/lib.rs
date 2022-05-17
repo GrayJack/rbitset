@@ -113,10 +113,10 @@ impl<T, const N: usize> BitSet<T, N> {
         self.inner
     }
 
-    /// Returns the capacity of the set, in other words how many bits it can
-    /// hold. This function may very well overflow if the size or length is too
-    /// big, but if you're making that big allocations you probably got bigger
-    /// things to worry about.
+    /// Returns the capacity of the set, in other words how many bits it can hold.
+    ///
+    /// This function may very well overflow if the size or length is too big, but if you're making
+    /// that big allocations you probably got bigger things to worry about.
     pub const fn capacity() -> usize {
         N * Self::item_size()
     }
@@ -128,24 +128,21 @@ impl<T, const N: usize> BitSet<T, N> {
 }
 
 impl<T: PrimInt, const N: usize> BitSet<T, N> {
-    /// Transmutes a reference to a borrowed bit array to a borrowed BitSet
-    /// with the same lifetime
+    /// Transmutes a reference to a borrowed bit array to a borrowed BitSet with the same lifetime
     pub fn from_ref(inner: &mut [T; N]) -> &mut Self {
-        // This should be completely safe as the memory representation is the
-        // same
+        // This should be completely safe as the memory representation is the same
         unsafe { mem::transmute(inner) }
     }
 
-    /// Returns slot index along with the bitmask for the bit
-    /// index to the slot this item was in
+    /// Returns slot index along with the bitmask for the bit index to the slot this item was in
     fn location(bit: usize) -> (usize, T) {
         let index = bit / Self::item_size();
         let bitmask = T::one() << (bit & (Self::item_size() - 1));
         (index, bitmask)
     }
 
-    /// Like `insert`, but does not panic if the bit is too large. See
-    /// the struct level documentation for notes on panicking.
+    /// Like `insert`, but does not panic if the bit is too large. See the struct level
+    /// documentation for notes on panicking.
     pub fn try_insert(&mut self, bit: usize) -> bool {
         if bit >= Self::capacity() {
             return false;
@@ -159,6 +156,7 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     }
 
     /// Like `remove`, but does not panic if the bit is too large.
+    ///
     /// See the struct level documentation for notes on panicking.
     pub fn try_remove(&mut self, bit: usize) -> bool {
         if bit >= Self::capacity() {
@@ -236,7 +234,7 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         total
     }
 
-    /// Returns a iterator
+    /// Returns a iterator that doesn't consume the values
     pub fn iter(&self) -> Iter<'_, T, N> {
         Iter::new(self)
     }
