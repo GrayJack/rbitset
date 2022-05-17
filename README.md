@@ -31,7 +31,7 @@ abstraction?
 ## Example
 
 Bit sets are extremely cheap. You can store any number from 0 to 255 in an array
-of 4x 64-bit numbers. Lookup should in theory be O(1). An example usage of this
+of 4x 64-bit numbers. The lookup should in theory be O(1). Example usage of this
 is once again `strspn`. Here it is in rust, using this library:
 
 ```rust
