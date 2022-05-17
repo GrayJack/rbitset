@@ -205,6 +205,7 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     }
 
     /// Returns the number of elements in the set.
+    #[inline]
     pub fn len(&self) -> usize {
         self.count_ones() as usize
     }
@@ -212,6 +213,81 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// Returns `true` if the set contains no elements.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Returns `true` if `self` has no elements in common with `other`. This is equivalent to
+    /// checking for an empty intersection.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet128;
+    ///
+    /// let a = BitSet128::from_iter([1u8, 2, 3]);
+    /// let mut b = BitSet128::new();
+    ///
+    /// assert!(a.is_disjoint(&b));
+    /// b.insert(4);
+    /// assert!(a.is_disjoint(&b));
+    /// b.insert(1);
+    /// assert!(!a.is_disjoint(&b));
+    /// ```
+    pub fn is_disjoint<U: PrimInt, const M: usize>(&self, other: &BitSet<U, M>) -> bool {
+        if self.len() <= other.len() {
+            self.iter().all(|v| !other.contains(v))
+        } else {
+            other.iter().all(|v| !self.contains(v))
+        }
+    }
+
+    /// Returns `true` if the set is a subset of another, i.e., `other` contains at least all the
+    /// values in `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let sup = BitSet8::from_iter([1u8, 2, 3]);
+    /// let mut set = BitSet8::new();
+    ///
+    /// assert!(set.is_subset(&sup));
+    /// set.insert(2);
+    /// assert!(set.is_subset(&sup));
+    /// set.insert(4);
+    /// assert!(!set.is_subset(&sup));
+    /// ```
+    pub fn is_subset<U: PrimInt, const M: usize>(&self, other: &BitSet<U, M>) -> bool {
+        if self.len() <= other.len() {
+            self.iter().all(|v| other.contains(v))
+        } else {
+            false
+        }
+    }
+
+    /// Returns `true` if the set is a superset of another, i.e., `self` contains at least all the
+    /// values in `other`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let sub = BitSet8::from_iter([1u8, 2]);
+    /// let mut set = BitSet8::new();
+    ///
+    /// assert!(!set.is_superset(&sub));
+    ///
+    /// set.insert(0);
+    /// set.insert(1);
+    /// assert!(!set.is_superset(&sub));
+    ///
+    /// set.insert(2);
+    /// assert!(set.is_superset(&sub));
+    /// ```
+    #[inline]
+    pub fn is_superset<U: PrimInt, const M: usize>(&self, other: &BitSet<U, M>) -> bool {
+        other.is_subset(self)
     }
 
     /// Returns the total number of enabled bits
@@ -610,6 +686,30 @@ mod tests {
         set.insert(7);
         assert_eq!(set.count_ones(), 2);
         assert_eq!(set.count_zeros(), 8 - 2);
+    }
+
+    #[test]
+    fn disjoint() {
+        let a = BitSet128::from_iter([1u8, 2, 3]);
+        let mut b = BitSet128::new();
+
+        assert!(a.is_disjoint(&b));
+        b.insert(4);
+        assert!(a.is_disjoint(&b));
+        b.insert(1);
+        assert!(!a.is_disjoint(&b));
+    }
+
+    #[test]
+    fn subset() {
+        let sup = BitSet8::from_iter([1u8, 2, 3]);
+        let mut set = BitSet8::new();
+
+        assert!(set.is_subset(&sup));
+        set.insert(2);
+        assert!(set.is_subset(&sup));
+        set.insert(4);
+        assert!(!set.is_subset(&sup));
     }
 
     #[test]
