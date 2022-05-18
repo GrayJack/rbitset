@@ -149,18 +149,37 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         (index, bitmask)
     }
 
-    /// Like `insert`, but does not panic if the bit is too large. See the struct level
-    /// documentation for notes on panicking.
-    pub fn try_insert(&mut self, bit: usize) -> bool {
+    /// Tries to add a value to the set.
+    ///
+    /// If the set did not have this value present, `true` is returned.
+    ///
+    /// If the set did have this value present, `false` is returned.
+    ///
+    /// # Examples
+    /// ```
+    /// use rbitset::{BitSet16, BitSetError};
+    ///
+    /// let mut set = BitSet16::new();
+    ///
+    /// assert_eq!(set.try_insert(2), Ok(true));
+    /// assert_eq!(set.try_insert(2), Ok(false));
+    /// assert_eq!(set.try_insert(16), Err(BitSetError::BiggerThanCapacity));
+    /// ```
+    #[inline]
+    pub fn try_insert(&mut self, bit: usize) -> Result<bool, BitSetError> {
         if bit >= Self::capacity() {
-            return false;
+            return Err(BitSetError::BiggerThanCapacity);
         }
         let (index, bitmask) = Self::location(bit);
-        match self.inner.get_mut(index) {
-            Some(v) => *v = (*v) | bitmask,
-            None => (),
-        }
-        true
+        Ok(match self.inner.get_mut(index) {
+            Some(v) => {
+                let contains = *v & bitmask == bitmask;
+                // Set the value
+                *v = (*v) | bitmask;
+                !contains
+            },
+            None => false,
+        })
     }
 
     /// Like `remove`, but does not panic if the bit is too large.
@@ -175,16 +194,34 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
             Some(v) => *v = (*v) & !bitmask,
             None => (),
         }
-        true
+    /// Adds a value to the set.
+    ///
+    /// If the set did not have this value present, `true` is returned.
+    ///
+    /// If the set did have this value present, `false` is returned.
+    ///
+    /// # Panics
+    /// This function may panic if `bit` value trying to be inserted is bigger than the
+    /// [`capacity`](BitSet::capacity) of the [`BitSet`]. Check [`try_insert`](BitSet::try_insert)
+    /// for a non-panicking version
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet16;
+    ///
+    /// let mut set = BitSet16::new();
+    ///
+    /// assert_eq!(set.insert(2), true);
+    /// assert_eq!(set.insert(2), false);
+    /// assert_eq!(set.len(), 1);
+    /// ```
+    pub fn insert(&mut self, bit: usize) -> bool {
+        self.try_insert(bit)
+            .expect("BitSet::insert called on an integer bigger than capacity")
     }
 
-    /// Enable the specified bit in the set. If the bit is already
-    /// enabled this is a no-op.
-    pub fn insert(&mut self, bit: usize) {
-        assert!(
-            self.try_insert(bit),
-            "BitSet::insert called on an integer bigger than capacity"
-        );
+    
     }
 
     /// Disable the specified bit in the set. If the bit is already
@@ -591,6 +628,23 @@ impl<T: PrimInt, const N: usize> Not for BitSet<T, N> {
         }
 
         self
+    }
+}
+
+
+/// Possible errors on the [`BitSet`] operations.
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
+#[non_exhaustive]
+pub enum BitSetError {
+    /// Happens when trying to insert or remove a value bigger than the capacity of the bitset.
+    BiggerThanCapacity,
+}
+
+impl fmt::Display for BitSetError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::BiggerThanCapacity => f.pad("tried to insert value bigger than capacity"),
+        }
     }
 }
 
@@ -1066,7 +1120,7 @@ mod tests {
     #[test]
     fn try_too_big() {
         let mut set = BitSet8::new();
-        assert!(!set.try_insert(8));
+        assert_eq!(set.try_insert(8), Err(BitSetError::BiggerThanCapacity));
     }
 
     #[test]
@@ -1083,7 +1137,9 @@ mod tests {
         set.insert(12);
         set.insert(67);
         set.insert(82);
-        set.insert(127);
+        assert!(set.insert(127));
+        assert!(!set.insert(127));
+
         assert!(set.contains(0));
         assert!(set.contains(12));
         assert!(!set.contains(51));
