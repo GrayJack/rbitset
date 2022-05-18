@@ -338,7 +338,21 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         }
     }
 
-    /// Returns a iterator that doesn't consume the values
+    /// An iterator visiting all elements in the set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let mut set = BitSet8::new();
+    /// set.insert(1);
+    /// set.insert(2);
+    ///
+    /// for x in set.iter() {
+    ///     println!("{x}");
+    /// }
+    /// ```
     pub fn iter(&self) -> Iter<'_, T, N> {
         Iter::new(self)
     }
@@ -545,7 +559,22 @@ impl<T: PrimInt, const N: usize> DoubleEndedIterator for IntoIter<T, N> {
 impl<T: PrimInt, const N: usize> FusedIterator for IntoIter<T, N> {}
 impl<T: PrimInt, const N: usize> ExactSizeIterator for IntoIter<T, N> {}
 
-/// Iterator over the set without consuming it
+/// An iterator over the items of a `BitSet`.
+///
+/// This `struct` is created by the [`iter`] method on [`BitSet`].
+/// See its documentation for more.
+///
+/// [`iter`]: BitSet::iter
+///
+/// # Examples
+///
+/// ```
+/// use rbitset::BitSet8;
+///
+/// let a = BitSet8::from_iter([1u8, 2, 3]);
+///
+/// let mut iter = a.iter();
+/// ```
 #[derive(Clone)]
 pub struct Iter<'a, T, const N: usize> {
     borrow: &'a BitSet<T, N>,
