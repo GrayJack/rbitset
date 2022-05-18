@@ -55,21 +55,25 @@ impl<T: PrimInt, const N: usize> From<[T; N]> for BitSet<T, N> {
 }
 
 impl<T, const N: usize> fmt::Debug for BitSet<T, N>
-where T: Copy + Clone + fmt::Binary
+where T: PrimInt + fmt::Binary
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "BitSet ")?;
-        let mut list = f.debug_list();
+        if f.alternate() {
+            write!(f, "BitSet ")?;
+            let mut list = f.debug_list();
 
-        for item in self.inner.iter() {
-            list.entry(&format_args!(
-                "{:#0width$b}",
-                item,
-                width = 2 /* 0b */ + Self::item_size()
-            ));
+            for item in self.inner.iter() {
+                list.entry(&format_args!(
+                    "{:#0width$b}",
+                    item,
+                    width = 2 /* 0b */ + Self::item_size()
+                ));
+            }
+
+            list.finish()
+        } else {
+            f.debug_set().entries(self.iter()).finish()
         }
-
-        list.finish()
     }
 }
 
