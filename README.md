@@ -3,7 +3,7 @@
 A bit set, being able to hold a fixed amount of booleans in an array of
 integers.
 
-This is a fork of [cbitset](https://crates.io/crates/cbitset) that reimplements
+This is a fork of [cbitset](https://crates.io/crates/cbitset) that re-implements
 the BitSet type using const generics
 
 ## Alternatives
