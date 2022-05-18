@@ -373,6 +373,36 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         }
     }
 
+    /// Visits the values representing the symmetric difference, i.e., the values that are in `self`
+    /// or in `other` but not in both.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let a = BitSet8::from_iter([1u8, 2, 3]);
+    /// let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+    ///
+    /// for x in a.symmetric_difference(&b) {
+    ///     println!("{x}");
+    /// }
+    ///
+    /// let diff1: BitSet8 = a.symmetric_difference(&b).collect();
+    /// let diff2: BitSet8 = b.symmetric_difference(&a).collect();
+    ///
+    /// assert_eq!(diff1, diff2);
+    /// let res = BitSet8::from_iter([1u8, 4]);
+    /// assert_eq!(diff1, res);
+    /// ```
+    pub fn symmetric_difference<'a, U: PrimInt, const M: usize>(
+        &'a self, other: &'a BitSet<U, M>,
+    ) -> SymmetricDifference<'a, T, U, N, M> {
+        SymmetricDifference {
+            iter: self.difference(other).chain(other.difference(self)),
+        }
+    }
+
     /// Visits the values representing the union, i.e., all the values in `self` or `other`, without
     /// duplicates.
     ///
@@ -947,6 +977,66 @@ where
 {
 }
 
+/// A lazy iterator producing elements in the symmetric difference of `BitSet`s.
+///
+/// This `struct` is created by the [`symmetric_difference`] method on
+/// [`BitSet`]. See its documentation for more.
+///
+/// [`symmetric_difference`]: BitSet::symmetric_difference
+///
+/// # Examples
+///
+/// ```
+/// use rbitset::BitSet8;
+///
+/// let a = BitSet8::from_iter([1u8, 2, 3]);
+/// let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+///
+/// let mut intersection = a.symmetric_difference(&b);
+/// ```
+#[must_use = "this returns the difference as an iterator, without modifying either input set"]
+#[derive(Clone)]
+pub struct SymmetricDifference<'a, T, U, const N: usize, const M: usize>
+where
+    T: PrimInt + 'a,
+    U: PrimInt + 'a,
+{
+    iter: Chain<Difference<'a, T, U, N, M>, Difference<'a, U, T, M, N>>,
+}
+
+impl<'a, T, U, const N: usize, const M: usize> fmt::Debug for SymmetricDifference<'a, T, U, N, M>
+where
+    T: PrimInt,
+    U: PrimInt,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_set().entries(self.clone()).finish()
+    }
+}
+
+impl<'a, T, U, const N: usize, const M: usize> Iterator for SymmetricDifference<'a, T, U, N, M>
+where
+    T: PrimInt + 'a,
+    U: PrimInt + 'a,
+{
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<T, U, const N: usize, const M: usize> FusedIterator for SymmetricDifference<'_, T, U, N, M>
+where
+    T: PrimInt,
+    U: PrimInt,
+{
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1204,6 +1294,19 @@ mod tests {
         let union: BitSet8 = a.union(&b).collect();
         let res = BitSet8::from_iter([1u8, 2, 3, 4]);
         assert_eq!(union, res);
+    }
+
+    #[test]
+    fn symetric_difference() {
+        let a = BitSet8::from_iter([1u8, 2, 3]);
+        let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+
+        let diff1: BitSet8 = a.symmetric_difference(&b).collect();
+        let diff2: BitSet8 = b.symmetric_difference(&a).collect();
+
+        assert_eq!(diff1, diff2);
+        let res = BitSet8::from_iter([1u8, 4]);
+        assert_eq!(diff1, res);
     }
 
     #[test]
