@@ -2,7 +2,7 @@
 
 use core::{
     fmt,
-    iter::{ExactSizeIterator, FromIterator, FusedIterator},
+    iter::{Chain, ExactSizeIterator, FromIterator, FusedIterator},
     mem,
     ops::{Bound, Not, RangeBounds},
 };
@@ -370,6 +370,39 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         Intersection {
             iter: self.iter(),
             other,
+        }
+    }
+
+    /// Visits the values representing the union, i.e., all the values in `self` or `other`, without
+    /// duplicates.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let a = BitSet8::from_iter([1u8, 2, 3]);
+    /// let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+    ///
+    /// for x in a.union(&b) {
+    ///     println!("{x}");
+    /// }
+    ///
+    /// let union: BitSet8 = a.union(&b).collect();
+    /// let res = BitSet8::from_iter([1u8, 2, 3, 4]);
+    /// assert_eq!(union, res);
+    /// ```
+    pub fn union<'a, U: PrimInt, const M: usize>(
+        &'a self, other: &'a BitSet<U, M>,
+    ) -> Union<'a, T, U, N, M> {
+        if self.len() >= other.len() {
+            Union {
+                iter: UnionChoose::SelfBiggerThanOther(self.iter().chain(other.difference(self))),
+            }
+        } else {
+            Union {
+                iter: UnionChoose::SelfSmallerThanOther(other.iter().chain(self.difference(other))),
+            }
         }
     }
 
@@ -822,6 +855,98 @@ where
 {
 }
 
+/// A lazy iterator producing elements in the union of `BitSet`s.
+///
+/// This `struct` is created by the [`union`] method on [`BitSet`].
+/// See its documentation for more.
+///
+/// [`union`]: BitSet::union
+///
+/// # Examples
+///
+/// ```
+/// use rbitset::BitSet8;
+///
+/// let a = BitSet8::from_iter([1u8, 2, 3]);
+/// let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+///
+/// let mut union_iter = a.union(&b);
+/// ```
+#[must_use = "this returns the union as an iterator, without modifying either input set"]
+#[derive(Clone)]
+pub struct Union<'a, T: PrimInt + 'a, U: PrimInt + 'a, const N: usize, const M: usize> {
+    iter: UnionChoose<'a, T, U, N, M>,
+}
+
+impl<'a, T, U, const N: usize, const M: usize> fmt::Debug for Union<'a, T, U, N, M>
+where
+    T: PrimInt,
+    U: PrimInt,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_set().entries(self.clone()).finish()
+    }
+}
+
+impl<'a, T, U, const N: usize, const M: usize> Iterator for Union<'a, T, U, N, M>
+where
+    T: PrimInt + 'a,
+    U: PrimInt + 'a,
+{
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<T, U, const N: usize, const M: usize> FusedIterator for Union<'_, T, U, N, M>
+where
+    T: PrimInt,
+    U: PrimInt,
+{
+}
+
+/// Helper enum to create a [`Union`] for [`BitSet`]
+#[derive(Clone)]
+enum UnionChoose<'a, T: PrimInt, U: PrimInt, const N: usize, const M: usize> {
+    SelfBiggerThanOther(Chain<Iter<'a, T, N>, Difference<'a, U, T, M, N>>),
+    SelfSmallerThanOther(Chain<Iter<'a, U, M>, Difference<'a, T, U, N, M>>),
+}
+
+impl<'a, T, U, const N: usize, const M: usize> Iterator for UnionChoose<'a, T, U, N, M>
+where
+    T: PrimInt + 'a,
+    U: PrimInt + 'a,
+{
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::SelfBiggerThanOther(iter) => iter.next(),
+            Self::SelfSmallerThanOther(iter) => iter.next(),
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        match self {
+            Self::SelfBiggerThanOther(iter) => iter.size_hint(),
+            Self::SelfSmallerThanOther(iter) => iter.size_hint(),
+        }
+    }
+}
+
+impl<T, U, const N: usize, const M: usize> FusedIterator for UnionChoose<'_, T, U, N, M>
+where
+    T: PrimInt,
+    U: PrimInt,
+{
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1069,6 +1194,16 @@ mod tests {
         let intersection: BitSet8 = a.intersection(&b).collect();
         let test = BitSet8::from_iter([2u8, 3]);
         assert_eq!(intersection, test);
+    }
+
+    #[test]
+    fn union() {
+        let a = BitSet8::from_iter([1u8, 2, 3]);
+        let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+
+        let union: BitSet8 = a.union(&b).collect();
+        let res = BitSet8::from_iter([1u8, 2, 3, 4]);
+        assert_eq!(union, res);
     }
 
     #[test]
