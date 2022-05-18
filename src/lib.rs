@@ -182,18 +182,36 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         })
     }
 
-    /// Like `remove`, but does not panic if the bit is too large.
+    /// Removes a value from the set. Returns whether the value was present in the set.
     ///
-    /// See the struct level documentation for notes on panicking.
-    pub fn try_remove(&mut self, bit: usize) -> bool {
+    /// If the bit is already disabled this is a no-op.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let mut set = BitSet8::new();
+    ///
+    /// set.insert(2);
+    /// assert_eq!(set.remove(2), true);
+    /// assert_eq!(set.remove(2), false);
+    /// ```
+    pub fn try_remove(&mut self, bit: usize) -> Result<bool, BitSetError> {
         if bit >= Self::capacity() {
-            return false;
+            return Err(BitSetError::BiggerThanCapacity);
         }
         let (index, bitmask) = Self::location(bit);
-        match self.inner.get_mut(index) {
-            Some(v) => *v = (*v) & !bitmask,
-            None => (),
-        }
+        Ok(match self.inner.get_mut(index) {
+            Some(v) => {
+                let was_present = *v & bitmask == bitmask;
+                *v = (*v) & !bitmask;
+                was_present
+            },
+            None => false,
+        })
+    }
+
     /// Adds a value to the set.
     ///
     /// If the set did not have this value present, `true` is returned.
@@ -221,32 +239,78 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
             .expect("BitSet::insert called on an integer bigger than capacity")
     }
 
-    
+    /// Removes a value from the set. Returns whether the value was present in the set.
+    ///
+    /// If the bit is already disabled this is a no-op.
+    ///
+    /// # Panics
+    /// This function may panic if `bit` value trying to be removed is bigger than the
+    /// [`capacity`](BitSet::capacity) of the [`BitSet`]. Check [`try_remove`](BitSet::try_remove)
+    /// for a non-panicking version
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let mut set = BitSet8::new();
+    ///
+    /// set.insert(2);
+    /// assert_eq!(set.remove(2), true);
+    /// assert_eq!(set.remove(2), false);
+    /// ```
+    pub fn remove(&mut self, bit: usize) -> bool {
+        self.try_remove(bit)
+            .expect("BitSet::remove called on an integer bigger than capacity")
     }
 
-    /// Disable the specified bit in the set. If the bit is already
-    /// disabled this is a no-op.
-    pub fn remove(&mut self, bit: usize) {
-        assert!(
-            self.try_remove(bit),
-            "BitSet::remove called on an integer bigger than capacity"
-        );
-    }
-
-    /// Returns true if the specified bit is enabled. If the bit is
-    /// out of bounds this silently returns false.
+    /// Returns `true` if the specified `bit` is enabled, in other words, if the set contains a
+    /// value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let set = BitSet8::from_iter([1u8, 2, 3]);
+    /// assert_eq!(set.contains(1), true);
+    /// assert_eq!(set.contains(4), false);
+    /// ```
     pub fn contains(&self, bit: usize) -> bool {
-        self.try_contains(bit).unwrap_or(false)
-    }
-
-    /// Returns true if the specified bit is enabled
-    pub fn try_contains(&self, bit: usize) -> Option<bool> {
         if bit >= Self::capacity() {
-            return None;
+            return false;
         }
 
         let (index, bitmask) = Self::location(bit);
-        Some(*self.inner.get(index)? & bitmask == bitmask)
+        match self.inner.get(index) {
+            Some(&v) => v & bitmask == bitmask,
+            None => false,
+        }
+    }
+
+    /// Returns `true` if the specified `bit` is enabled, in other words, if the set contains a
+    /// value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let set = BitSet8::from_iter([1u8, 2, 3]);
+    /// assert_eq!(set.try_contains(1), Ok(true));
+    /// assert_eq!(set.try_contains(4), Ok(false));
+    /// ```
+    pub fn try_contains(&self, bit: usize) -> Result<bool, BitSetError> {
+        if bit >= Self::capacity() {
+            return Err(BitSetError::BiggerThanCapacity);
+        }
+
+        let (index, bitmask) = Self::location(bit);
+
+        match self.inner.get(index) {
+            Some(&v) => Ok(v & bitmask == bitmask),
+            None => Err(BitSetError::BiggerThanCapacity),
+        }
     }
 
     /// Returns the number of elements in the set.
@@ -767,7 +831,7 @@ impl<'a, T: PrimInt, const N: usize> Iterator for Iter<'a, T, N> {
     /// Iterator implementation for BitSet, guaranteed to remove and
     /// return the items in ascending order
     fn next(&mut self) -> Option<Self::Item> {
-        while !self.borrow.try_contains(self.bit)? {
+        while !self.borrow.try_contains(self.bit).ok()? {
             self.bit = self.bit.saturating_add(1);
         }
 
@@ -788,7 +852,7 @@ impl<'a, T: PrimInt, const N: usize> Iterator for Iter<'a, T, N> {
 impl<'a, T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'a, T, N> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.bit = self.bit.saturating_sub(2);
-        while !self.borrow.try_contains(self.bit)? {
+        while !self.borrow.try_contains(self.bit).ok()? {
             self.bit = self.bit.saturating_sub(1);
         }
 
