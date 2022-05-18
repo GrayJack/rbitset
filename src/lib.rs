@@ -590,8 +590,23 @@ impl<T: PrimInt, const N: usize> Not for BitSet<T, N> {
     }
 }
 
-/// Iterator implementation for BitSet, guaranteed to remove and
-/// return the items in ascending order
+/// An owning iterator over the items of a `BitSet`.
+///
+/// This `struct` is created by the [`into_iter`] method on [`BitSet`]
+/// (provided by the [`IntoIterator`] trait). See its documentation for more.
+///
+/// [`into_iter`]: IntoIterator::into_iter
+/// [`IntoIterator`]: core::iter::IntoIterator
+///
+/// # Examples
+///
+/// ```
+/// use rbitset::BitSet16;
+///
+/// let a = BitSet16::from_iter([1u8, 2, 3]);
+///
+/// let mut iter = a.into_iter();
+/// ```
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct IntoIter<T, const N: usize>(BitSet<T, N>);
