@@ -310,6 +310,41 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         total
     }
 
+    /// Visits the values representing the difference,
+    /// i.e., the values that are in `self` but not in `other`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let a = BitSet8::from_iter([1u8, 2, 3]);
+    /// let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+    ///
+    /// // Can be seen as `a - b`.
+    /// for x in a.difference(&b) {
+    ///     println!("{x}"); // Print 1
+    /// }
+    ///
+    /// let diff: BitSet8 = a.difference(&b).collect();
+    /// let res = BitSet8::from_iter([1u8]);
+    /// assert_eq!(diff, res);
+    ///
+    /// // Note that difference is not symmetric,
+    /// // and `b - a` means something else:
+    /// let diff: BitSet8 = b.difference(&a).collect();
+    /// let res = BitSet8::from_iter([4u8]);
+    /// assert_eq!(diff, res);
+    /// ```
+    pub fn difference<'a, U: PrimInt, const M: usize>(
+        &'a self, other: &'a BitSet<U, M>,
+    ) -> Difference<'a, T, U, N, M> {
+        Difference {
+            iter: self.iter(),
+            other,
+        }
+    }
+
     /// Visits the values representing the intersection,
     /// i.e., the values that are both in `self` and `other`.
     ///
@@ -653,6 +688,71 @@ impl<'a, T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'a, T, N> {
 impl<'a, T: PrimInt, const N: usize> FusedIterator for Iter<'a, T, N> {}
 impl<'a, T: PrimInt, const N: usize> ExactSizeIterator for Iter<'a, T, N> {}
 
+/// A lazy iterator producing elements in the difference of `BitSet`s.
+///
+/// This `struct` is created by the [`difference`] method on [`BitSet`].
+/// See its documentation for more.
+///
+/// [`difference`]: BitSet::difference
+///
+/// # Examples
+///
+/// ```
+/// use rbitset::BitSet8;
+///
+/// let a = BitSet8::from_iter([1u8, 2, 3]);
+/// let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+///
+/// let mut difference = a.difference(&b);
+/// ```
+#[must_use = "this returns the difference as an iterator, without modifying either input set"]
+#[derive(Clone)]
+pub struct Difference<'a, T: PrimInt + 'a, U: PrimInt + 'a, const N: usize, const M: usize> {
+    // iterator of the first set
+    iter:  Iter<'a, T, N>,
+    // the second set
+    other: &'a BitSet<U, M>,
+}
+
+impl<'a, T, U, const N: usize, const M: usize> fmt::Debug for Difference<'a, T, U, N, M>
+where
+    T: PrimInt,
+    U: PrimInt,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_set().entries(self.clone()).finish()
+    }
+}
+
+impl<'a, T, U, const N: usize, const M: usize> Iterator for Difference<'a, T, U, N, M>
+where
+    T: PrimInt + 'a,
+    U: PrimInt + 'a,
+{
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let elt = self.iter.next()?;
+            if !self.other.contains(elt) {
+                return Some(elt);
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (_, upper) = self.iter.size_hint();
+        (0, upper)
+    }
+}
+
+impl<T, U, const N: usize, const M: usize> FusedIterator for Difference<'_, T, U, N, M>
+where
+    T: PrimInt,
+    U: PrimInt,
+{
+}
+
 /// A lazy iterator producing elements in the intersection of `BitSet`s.
 ///
 /// This `struct` is created by the [`intersection`] method on [`BitSet`].
@@ -943,6 +1043,22 @@ mod tests {
         assert_eq!(iter.next_back(), None);
         assert_eq!(iter.len(), 0);
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn difference() {
+        let a = BitSet8::from_iter([1u8, 2, 3]);
+        let b = BitSet8::from_iter([4u8, 2, 3, 4]);
+
+        let diff: BitSet8 = a.difference(&b).collect();
+        let res = BitSet8::from_iter([1u8]);
+        assert_eq!(diff, res);
+
+        // Note that difference is not symmetric,
+        // and `b - a` means something else:
+        let diff: BitSet8 = b.difference(&a).collect();
+        let res = BitSet8::from_iter([4u8]);
+        assert_eq!(diff, res);
     }
 
     #[test]
