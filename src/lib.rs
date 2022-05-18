@@ -592,21 +592,9 @@ impl<T: PrimInt, const N: usize> Not for BitSet<T, N> {
 #[repr(transparent)]
 pub struct IntoIter<T, const N: usize>(BitSet<T, N>);
 
-impl<T, const N: usize> fmt::Debug for IntoIter<T, N>
-where T: Copy + Clone + fmt::Binary
-{
+impl<T: PrimInt, const N: usize> fmt::Debug for IntoIter<T, N> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut list = f.debug_list();
-
-        for item in self.0.inner.iter() {
-            list.entry(&format_args!(
-                "{:#0width$b}",
-                item,
-                width = 2 /* 0b */ + BitSet::<T, N>::item_size()
-            ));
-        }
-
-        list.finish()
+        f.debug_set().entries(self.clone()).finish()
     }
 }
 
@@ -690,21 +678,9 @@ impl<'a, T: PrimInt, const N: usize> Iter<'a, T, N> {
     }
 }
 
-impl<'a, T, const N: usize> fmt::Debug for Iter<'a, T, N>
-where T: Copy + Clone + fmt::Binary
-{
+impl<'a, T: PrimInt, const N: usize> fmt::Debug for Iter<'a, T, N> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut list = f.debug_list();
-
-        for item in self.borrow.inner.iter() {
-            list.entry(&format_args!(
-                "{:#0width$b}",
-                item,
-                width = 2 /* 0b */ + BitSet::<T, N>::item_size()
-            ));
-        }
-
-        list.finish()
+        f.debug_set().entries(self.clone()).finish()
     }
 }
 
