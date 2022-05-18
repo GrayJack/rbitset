@@ -55,25 +55,29 @@ impl<T: PrimInt, const N: usize> From<[T; N]> for BitSet<T, N> {
 }
 
 impl<T, const N: usize> fmt::Debug for BitSet<T, N>
-where T: PrimInt + fmt::Binary
+where T: PrimInt
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if f.alternate() {
-            write!(f, "BitSet ")?;
-            let mut list = f.debug_list();
+        f.debug_set().entries(self.iter()).finish()
+    }
+}
 
-            for item in self.inner.iter() {
-                list.entry(&format_args!(
-                    "{:#0width$b}",
-                    item,
-                    width = 2 /* 0b */ + Self::item_size()
-                ));
-            }
+impl<T, const N: usize> fmt::Binary for BitSet<T, N>
+where T: Copy + fmt::Binary
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "BitSet ")?;
+        let mut list = f.debug_list();
 
-            list.finish()
-        } else {
-            f.debug_set().entries(self.iter()).finish()
+        for item in self.inner.iter() {
+            list.entry(&format_args!(
+                "{:#0width$b}",
+                item,
+                width = 2 /* 0b */ + Self::item_size()
+            ));
         }
+
+        list.finish()
     }
 }
 
@@ -1309,10 +1313,23 @@ mod tests {
         use self::alloc::format;
         assert_eq!(
             format!("{:?}", (0u16..10).collect::<BitSet16>()),
-            "BitSet [0b0000001111111111]"
+            "{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}"
         );
         assert_eq!(
             format!("{:#?}", (0u16..10).collect::<BitSet16>()),
+            "{\n    0,\n    1,\n    2,\n    3,\n    4,\n    5,\n    6,\n    7,\n    8,\n    9,\n}"
+        );
+    }
+
+    #[test]
+    fn binary() {
+        use self::alloc::format;
+        assert_eq!(
+            format!("{:b}", (0u16..10).collect::<BitSet16>()),
+            "BitSet [0b0000001111111111]"
+        );
+        assert_eq!(
+            format!("{:#b}", (0u16..10).collect::<BitSet16>()),
             "BitSet [\n    0b0000001111111111,\n]"
         );
     }
