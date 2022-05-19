@@ -419,6 +419,31 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         total
     }
 
+    /// Clears the set, returning all elements as an iterator. Keeps the
+    /// allocated memory for reuse.
+    ///
+    /// If the returned iterator is dropped before being fully consumed, it
+    /// drops the remaining elements. The returned iterator keeps a mutable
+    /// borrow on the vector to optimize its implementation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let mut set = BitSet8::from_iter([1u8, 2, 3]);
+    /// assert!(!set.is_empty());
+    ///
+    /// for i in set.drain() {
+    ///     println!("{i}");
+    /// }
+    ///
+    /// assert!(set.is_empty());
+    /// ```
+    pub fn drain(&mut self) -> Drain<'_, T, N> {
+        Drain { inner: self }
+    }
+
     /// Visits the values representing the difference,
     /// i.e., the values that are in `self` but not in `other`.
     ///
@@ -711,6 +736,67 @@ impl fmt::Display for BitSetError {
         }
     }
 }
+
+/// A draining iterator over the items of a `BitSet`.
+///
+/// This `struct` is created by the [`drain`] method on [`BitSet`].
+/// See its documentation for more.
+///
+/// [`drain`]: BitSet::drain
+///
+/// # Examples
+///
+/// ```
+/// use rbitset::BitSet8;
+///
+/// let mut a = BitSet8::from_iter([1u8, 2, 3]);
+///
+/// let mut drain = a.drain();
+/// ```
+pub struct Drain<'a, T: PrimInt + 'a, const N: usize> {
+    inner: &'a mut BitSet<T, N>,
+}
+
+impl<T: PrimInt, const N: usize> fmt::Debug for Drain<'_, T, N> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.inner, f)
+    }
+}
+
+impl<'a, T: PrimInt, const N: usize> Iterator for Drain<'a, T, N> {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        for (index, item) in self.inner.inner.iter_mut().enumerate() {
+            if !item.is_zero() {
+                let bitindex = item.trailing_zeros() as usize;
+
+                // E.g. 1010 & 1001 = 1000
+                *item = *item & (*item - T::one());
+
+                // Safe from overflows because one couldn't possibly add an item with this index if
+                // it did overflow
+                return Some(index * BitSet::<T, N>::item_size() + bitindex);
+            }
+        }
+
+        None
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.inner.count_ones() as usize;
+        (len, Some(len))
+    }
+}
+
+impl<T: PrimInt, const N: usize> ExactSizeIterator for Drain<'_, T, N> {
+    #[inline]
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+impl<T: PrimInt, const N: usize> FusedIterator for Drain<'_, T, N> {}
 
 /// An owning iterator over the items of a `BitSet`.
 ///
@@ -1313,6 +1399,16 @@ mod tests {
         for i in 3..16 {
             assert!(set.contains(i));
         }
+    }
+
+    #[test]
+    fn drain() {
+        let mut set = BitSet8::from_iter([1u8, 2, 3]);
+        assert!(!set.is_empty());
+
+        for _ in set.drain() {}
+
+        assert!(set.is_empty());
     }
 
     #[test]
