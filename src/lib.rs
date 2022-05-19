@@ -9,24 +9,24 @@ use core::{
 
 use num_traits::{Bounded, PrimInt};
 
-/// A bit set able to hold up to 8 elements
+/// A bit set able to hold up to 8 elements.
 pub type BitSet8 = BitSet<u8, 1>;
-/// A bit set able to hold up to 16 elements
+/// A bit set able to hold up to 16 elements.
 pub type BitSet16 = BitSet<u16, 1>;
-/// A bit set able to hold up to 32 elements
+/// A bit set able to hold up to 32 elements.
 pub type BitSet32 = BitSet<u32, 1>;
-/// A bit set able to hold up to 64 elements
+/// A bit set able to hold up to 64 elements.
 pub type BitSet64 = BitSet<u64, 1>;
-/// A bit set able to hold up to 128 elements
+/// A bit set able to hold up to 128 elements.
 pub type BitSet128 = BitSet<u64, 2>;
-/// A bit set able to hold up to 256 elements
+/// A bit set able to hold up to 256 elements.
 pub type BitSet256 = BitSet<u64, 4>;
-/// A bit set able to hold up to 512 elements
+/// A bit set able to hold up to 512 elements.
 pub type BitSet512 = BitSet<u64, 8>;
-/// A bit set able to hold up to 1024 elements
+/// A bit set able to hold up to 1024 elements.
 pub type BitSet1024 = BitSet<u64, 16>;
 
-/// The bit set itself
+/// The bit set itself.
 ///
 /// This wrapper is `#![repr(transparent)]` and guaranteed to have the same memory
 /// representation as the inner bit array
@@ -87,7 +87,15 @@ macro_rules! impl_new {
     ($($t:ty)+) => {
         $(
         impl<const N: usize> BitSet<$t, N> {
-            /// Create an empty instance of [`BitSet`]
+            /// Create an empty instance of [`BitSet`].
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use rbitset::BitSet;
+            ///
+            /// let set = BitSet::<u8, 1>::new();
+            /// ```
             pub const fn new() -> Self {
                 Self { inner: [0; N] }
             }
@@ -100,14 +108,36 @@ impl_new!(i8 i16 i32 i64 i128 isize);
 impl_new!(u8 u16 u32 u64 u128 usize);
 
 impl<T: PrimInt + Default, const N: usize> BitSet<T, N> {
-    /// Create an empty instance with default value
+    /// Create an empty instance with default value.
     ///
     /// This function is the same as [`new`](BitSet::new) but without the constness.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet;
+    ///
+    /// let set = BitSet::<u32, 7>::new();
+    /// ```
     pub fn with_default() -> Self {
         Self::default()
     }
 
-    /// Disable all bits, probably faster than what `fill(.., false)` would do
+    /// Clears the set, disabling all bits, removing all elements.
+    ///
+    /// Probably faster than what `fill(.., false)` would be.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let mut set = BitSet8::new();
+    /// set.insert(1);
+    /// assert!(!set.is_empty());
+    /// set.clear();
+    /// assert!(set.is_empty());
+    /// ```
     pub fn clear(&mut self) {
         for item in self.inner.iter_mut() {
             *item = Default::default()
@@ -116,7 +146,16 @@ impl<T: PrimInt + Default, const N: usize> BitSet<T, N> {
 }
 
 impl<T, const N: usize> BitSet<T, N> {
-    /// Return the inner integer array
+    /// Return the inner integer array.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let set = BitSet8::from_iter([1u8, 2, 3]);
+    /// assert_eq!(set.into_inner(), [0b00001110]);
+    /// ```
     pub fn into_inner(self) -> [T; N] {
         self.inner
     }
@@ -125,24 +164,44 @@ impl<T, const N: usize> BitSet<T, N> {
     ///
     /// This function may very well overflow if the size or length is too big, but if you're making
     /// that big allocations you probably got bigger things to worry about.
+    ///
+    /// # Examples
+    /// ```
+    /// use rbitset::BitSet;
+    ///
+    /// let capacity = BitSet::<u32, 3>::capacity();
+    /// assert_eq!(capacity, 32 * 3);
+    /// ```
     pub const fn capacity() -> usize {
         N * Self::item_size()
     }
 
-    /// Returns the bit size of each item
+    /// Returns the bit size of each item.
     const fn item_size() -> usize {
         mem::size_of::<T>() * 8
     }
 }
 
 impl<T: PrimInt, const N: usize> BitSet<T, N> {
-    /// Transmutes a reference to a borrowed bit array to a borrowed BitSet with the same lifetime
+    /// Transmutes a reference to a borrowed bit array to a borrowed BitSet with the same lifetime.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet;
+    ///
+    /// let mut raw = [0b00001110, 0u8];
+    /// let set = BitSet::from_ref(&mut raw);
+    /// assert!(set.contains(1));
+    /// assert!(set.contains(2));
+    /// assert!(set.contains(3));
+    /// ```
     pub fn from_ref(inner: &mut [T; N]) -> &mut Self {
         // This should be completely safe as the memory representation is the same
         unsafe { mem::transmute(inner) }
     }
 
-    /// Returns slot index along with the bitmask for the bit index to the slot this item was in
+    /// Returns slot index along with the bitmask for the bit index to the slot this item was in.
     fn location(bit: usize) -> (usize, T) {
         let index = bit / Self::item_size();
         let bitmask = T::one() << (bit & (Self::item_size() - 1));
@@ -314,12 +373,34 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     }
 
     /// Returns the number of elements in the set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet16;
+    ///
+    /// let mut set = BitSet16::new();
+    /// assert_eq!(set.len(), 0);
+    /// set.insert(1);
+    /// assert_eq!(set.len(), 1);
+    /// ```
     #[inline]
     pub fn len(&self) -> usize {
         self.count_ones() as usize
     }
 
     /// Returns `true` if the set contains no elements.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet16;
+    ///
+    /// let mut set = BitSet16::new();
+    /// assert!(set.is_empty());
+    /// set.insert(1);
+    /// assert!(!set.is_empty());
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -399,7 +480,16 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         other.is_subset(self)
     }
 
-    /// Returns the total number of enabled bits
+    /// Returns the total number of enabled bits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let set = BitSet8::from_iter([1u8, 2, 3]);
+    /// assert_eq!(set.count_ones(), 3);
+    /// ```
     pub fn count_ones(&self) -> u32 {
         let mut total = 0;
         for item in self.inner.iter() {
@@ -408,7 +498,16 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         total
     }
 
-    /// Returns the total number of disabled bits
+    /// Returns the total number of disabled bits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet8;
+    ///
+    /// let set = BitSet8::from_iter([1u8, 2, 3]);
+    /// assert_eq!(set.count_zeros(), 5);
+    /// ```
     pub fn count_zeros(&self) -> u32 {
         let mut total = 0;
 
@@ -419,12 +518,11 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         total
     }
 
-    /// Clears the set, returning all elements as an iterator. Keeps the
-    /// allocated memory for reuse.
+    /// Clears the set, returning all elements as an iterator. Keeps the allocated memory for reuse.
     ///
-    /// If the returned iterator is dropped before being fully consumed, it
-    /// drops the remaining elements. The returned iterator keeps a mutable
-    /// borrow on the vector to optimize its implementation.
+    /// If the returned iterator is dropped before being fully consumed, it drops the remaining
+    /// elements. The returned iterator keeps a mutable borrow on the vector to optimize its
+    /// implementation.
     ///
     /// # Examples
     ///
@@ -444,8 +542,8 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         Drain { inner: self }
     }
 
-    /// Visits the values representing the difference,
-    /// i.e., the values that are in `self` but not in `other`.
+    /// Visits the values representing the difference, i.e., the values that are in `self` but not
+    /// in `other`.
     ///
     /// # Examples
     ///
@@ -479,8 +577,8 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         }
     }
 
-    /// Visits the values representing the intersection,
-    /// i.e., the values that are both in `self` and `other`.
+    /// Visits the values representing the intersection, i.e., the values that are both in `self`
+    /// and `other`.
     ///
     /// # Examples
     ///
@@ -591,8 +689,7 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
 }
 
 impl<T: Default + PrimInt, const N: usize> BitSet<T, N> {
-    /// Set all bits in a range.
-    /// `fill(.., false)` is effectively the same as `clear()`.
+    /// Set all bits in a range. `fill(.., false)` is effectively the same as `clear()`.
     ///
     /// # Panics
     /// Panics if the start or end bounds are more than the capacity.
@@ -739,8 +836,7 @@ impl fmt::Display for BitSetError {
 
 /// A draining iterator over the items of a `BitSet`.
 ///
-/// This `struct` is created by the [`drain`] method on [`BitSet`].
-/// See its documentation for more.
+/// This `struct` is created by the [`drain`] method on [`BitSet`]. See its documentation for more.
 ///
 /// [`drain`]: BitSet::drain
 ///
@@ -800,8 +896,8 @@ impl<T: PrimInt, const N: usize> FusedIterator for Drain<'_, T, N> {}
 
 /// An owning iterator over the items of a `BitSet`.
 ///
-/// This `struct` is created by the [`into_iter`] method on [`BitSet`]
-/// (provided by the [`IntoIterator`] trait). See its documentation for more.
+/// This `struct` is created by the [`into_iter`] method on [`BitSet`] (provided by the
+/// [`IntoIterator`] trait). See its documentation for more.
 ///
 /// [`into_iter`]: IntoIterator::into_iter
 /// [`IntoIterator`]: core::iter::IntoIterator
@@ -874,8 +970,7 @@ impl<T: PrimInt, const N: usize> ExactSizeIterator for IntoIter<T, N> {}
 
 /// An iterator over the items of a `BitSet`.
 ///
-/// This `struct` is created by the [`iter`] method on [`BitSet`].
-/// See its documentation for more.
+/// This `struct` is created by the [`iter`] method on [`BitSet`]. See its documentation for more.
 ///
 /// [`iter`]: BitSet::iter
 ///
@@ -956,8 +1051,8 @@ impl<'a, T: PrimInt, const N: usize> ExactSizeIterator for Iter<'a, T, N> {}
 
 /// A lazy iterator producing elements in the difference of `BitSet`s.
 ///
-/// This `struct` is created by the [`difference`] method on [`BitSet`].
-/// See its documentation for more.
+/// This `struct` is created by the [`difference`] method on [`BitSet`]. See its documentation for
+/// more.
 ///
 /// [`difference`]: BitSet::difference
 ///
@@ -1021,8 +1116,8 @@ where
 
 /// A lazy iterator producing elements in the intersection of `BitSet`s.
 ///
-/// This `struct` is created by the [`intersection`] method on [`BitSet`].
-/// See its documentation for more.
+/// This `struct` is created by the [`intersection`] method on [`BitSet`]. See its documentation for
+/// more.
 ///
 /// [`intersection`]: BitSet::intersection
 ///
@@ -1090,8 +1185,7 @@ where
 
 /// A lazy iterator producing elements in the union of `BitSet`s.
 ///
-/// This `struct` is created by the [`union`] method on [`BitSet`].
-/// See its documentation for more.
+/// This `struct` is created by the [`union`] method on [`BitSet`]. See its documentation for more.
 ///
 /// [`union`]: BitSet::union
 ///
@@ -1182,8 +1276,8 @@ where
 
 /// A lazy iterator producing elements in the symmetric difference of `BitSet`s.
 ///
-/// This `struct` is created by the [`symmetric_difference`] method on
-/// [`BitSet`]. See its documentation for more.
+/// This `struct` is created by the [`symmetric_difference`] method on [`BitSet`]. See its
+/// documentation for more.
 ///
 /// [`symmetric_difference`]: BitSet::symmetric_difference
 ///
