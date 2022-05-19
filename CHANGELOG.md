@@ -2,6 +2,46 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.2.0 - 2022-05-19
+
+### Documentation
+
+    - Add examples to all functions part of the public API and reword a few items - (8dc0383) - GrayJack
+    - Improve documentation for `IntoIter` type - (0b35df3) - GrayJack
+    - Improve documentation for `Iter` related items - (68e0e77) - GrayJack
+    - Improve parts of the documentation - (c5589af) - GrayJack
+    
+### Features
+
+    - Introduce a Drain iterator - (478a33a) - GrayJack
+    - Change the `remove` and `contains` to match the semantics of standard library HashSet and BtreeSet - (a24c3cc) - GrayJack
+    - Change the insert to match the semantics of standard library `HashSet` and `BtreeSet` - (afd79f9) - GrayJack
+    - Rework again the debug implementation and move old implementation to `fmt::Binary` formatting - (c4c0eb5) - GrayJack
+    - Changed the debug printing of `BitSet`. - (5045e2d) - GrayJack
+    - Make `Debug` formatting for `Iter` and `IntoIter` similar to `HashSet`/`BtreeSet` - (07a4f94) - GrayJack
+    - Implement iterator over symetric difference between two `BitSet`s - (a024487) - GrayJack
+    - Implement iterator over the union between two `BitSet`s - (36024d1) - GrayJack
+    - Implement iterator over the difference between two `BitSet`s - (3265c35) - GrayJack
+    - Implement iterator over intersection over 2 `BitSet`s - (4f0ff4c) - GrayJack
+    - Add functions to check relationships between bitsets (`disjoint`, `subset` and `superset`) - (a7ec18e) - GrayJack
+    - Create a non-consuming iterator for `BitSet` - (aa3dd65) - GrayJack
+    - Add `len` and `is_empty` to `BitSet` - (07adfa7) - GrayJack
+    - Implement `Extend` for `BitSet` - (98a1f0f) - GrayJack
+    - Implement `Extend` for `BitSet` - (752bede) - GrayJack
+    
+### Miscellaneous Chores
+
+    - Update the changelog template - (bf296e7) - GrayJack
+    - Fix typo on README.md - (1c98065) - GrayJack
+    - Update README.md and CHANGELOG.md - (ee4e8aa) - GrayJack
+    
+### Refactoring
+
+    - Create a `IntoIter` type for `BitSet` - (5d8ed79) - GrayJack
+    
+
+- - -
+
 ## v0.1.0 - 2022-03-05
 ### Continuous Integration
 - Fix ctrl+c ctrl+v problem - (f5fec17) - GrayJack
