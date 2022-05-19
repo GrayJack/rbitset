@@ -2,6 +2,19 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.2.1 - 2022-05-19
+
+### Features
+
+    - Add optional serde support - (dc58177) - GrayJack
+    
+### Miscellaneous Chores
+
+    - Update `Cargo.toml` values - (2b8225d) - GrayJack
+    
+
+- - -
+
 ## v0.2.0 - 2022-05-19
 
 ### Documentation
