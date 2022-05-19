@@ -3,14 +3,14 @@ name = "rbitset"
 description = "A bit set, being able to hold a fixed amount of booleans in an array of integers"
 version = "0.2.0"
 authors = [
-    "jD91mZM2 <me@krake.one>",
     "Eric Shimizu Karbstein <gr41.j4ck@gmail.com>",
+    "jD91mZM2 <me@krake.one>",
 ]
-repository = "https://gitlab.redox-os.org/redox-os/cbitset"
+repository = "https://github.com/GrayJack/rbitset"
 readme = "README.md"
 license = "MIT"
-keywords = ["no_std", "bitset"]
-categories = ["no-std"]
+keywords = ["no_std", "bitset", "set"]
+categories = ["data-structures", "no-std"]
 edition = "2021"
 
 
