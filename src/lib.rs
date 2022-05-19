@@ -1,4 +1,5 @@
 #![no_std]
+#![cfg_attr(_doc, feature(doc_cfg))]
 
 use core::{
     fmt,
@@ -8,6 +9,9 @@ use core::{
 };
 
 use num_traits::{Bounded, PrimInt};
+
+#[cfg(feature = "serde")]
+use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
 
 /// A bit set able to hold up to 8 elements.
 pub type BitSet8 = BitSet<u8, 1>;
@@ -817,6 +821,52 @@ impl<T: PrimInt, const N: usize> Not for BitSet<T, N> {
     }
 }
 
+#[cfg(feature = "serde")]
+#[cfg_attr(_doc, doc(cfg(feature = "serde")))]
+impl<T: PrimInt, const N: usize> Serialize for BitSet<T, N> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where S: serde::Serializer {
+        let mut seq = serializer.serialize_seq(Some(self.len()))?;
+        for ref e in self {
+            seq.serialize_element(e)?;
+        }
+        seq.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(_doc, doc(cfg(feature = "serde")))]
+impl<'de, T: PrimInt + Default, const N: usize> Deserialize<'de> for BitSet<T, N> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: serde::Deserializer<'de> {
+        use core::marker::PhantomData;
+
+        struct BitSetVisitor<T: PrimInt, const N: usize>(PhantomData<BitSet<T, N>>);
+
+        impl<'de, T: PrimInt + Default, const N: usize> Visitor<'de> for BitSetVisitor<T, N> {
+            type Value = BitSet<T, N>;
+
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                f.write_str("a sequence")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where A: serde::de::SeqAccess<'de> {
+                let mut set = BitSet::with_default();
+
+                // While there are entries remaining in the input, add them into our set.
+                while let Some(value) = seq.next_element()? {
+                    set.insert(value);
+                }
+
+                Ok(set)
+            }
+        }
+
+        let visitor = BitSetVisitor(PhantomData);
+        deserializer.deserialize_seq(visitor)
+    }
+}
 
 /// Possible errors on the [`BitSet`] operations.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]

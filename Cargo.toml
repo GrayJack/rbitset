@@ -13,6 +13,13 @@ keywords = ["no_std", "bitset", "set"]
 categories = ["data-structures", "no-std"]
 edition = "2021"
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "_doc"]
 
 [dependencies]
 num-traits = { version = "0.2.8", default-features = false }
+serde = { version = "1.0.0", default-features = false, optional = true }
+
+[features]
+serde = ["dep:serde"]
