@@ -212,6 +212,44 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         (index, bitmask)
     }
 
+    /// Tries to move all elements from `other` into `self`, leaving `other` empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet16;
+    ///
+    /// let mut a = BitSet16::new();
+    /// a.insert(1);
+    /// a.insert(2);
+    /// a.insert(3);
+    ///
+    /// let mut b = BitSet16::new();
+    /// b.insert(3);
+    /// b.insert(4);
+    /// b.insert(5);
+    ///
+    /// a.try_append(&mut b).expect("An error ocurred");
+    ///
+    /// assert_eq!(a.len(), 5);
+    /// assert_eq!(b.len(), 0);
+    ///
+    /// assert!(a.contains(&1));
+    /// assert!(a.contains(&2));
+    /// assert!(a.contains(&3));
+    /// assert!(a.contains(&4));
+    /// assert!(a.contains(&5));
+    /// ```
+    pub fn try_append<U, const M: usize>(
+        &mut self, other: &mut BitSet<U, M>,
+    ) -> Result<(), BitSetError>
+    where U: PrimInt {
+        for item in other.drain() {
+            self.try_insert(item)?;
+        }
+        Ok(())
+    }
+
     /// Tries to add a value to the set.
     ///
     /// If the set did not have this value present, `true` is returned.
@@ -275,6 +313,45 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         })
     }
 
+    /// Move all elements from `other` into `self`, leaving `other` empty.
+    ///
+    /// # Panics
+    ///
+    /// This function may panic if `other` contains activated bits bigger than what `self` capacity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet16;
+    ///
+    /// let mut a = BitSet16::new();
+    /// a.insert(1);
+    /// a.insert(2);
+    /// a.insert(3);
+    ///
+    /// let mut b = BitSet16::new();
+    /// b.insert(3);
+    /// b.insert(4);
+    /// b.insert(5);
+    ///
+    /// a.append(&mut b);
+    ///
+    /// assert_eq!(a.len(), 5);
+    /// assert_eq!(b.len(), 0);
+    ///
+    /// assert!(a.contains(&1));
+    /// assert!(a.contains(&2));
+    /// assert!(a.contains(&3));
+    /// assert!(a.contains(&4));
+    /// assert!(a.contains(&5));
+    /// ```
+    pub fn append<U, const M: usize>(&mut self, other: &mut BitSet<U, M>)
+    where U: PrimInt {
+        for item in other.drain() {
+            self.insert(item);
+        }
+    }
+
     /// Adds a value to the set.
     ///
     /// If the set did not have this value present, `true` is returned.
@@ -297,6 +374,7 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// assert_eq!(set.insert(2), false);
     /// assert_eq!(set.len(), 1);
     /// ```
+    #[inline]
     pub fn insert(&mut self, bit: usize) -> bool {
         self.try_insert(bit)
             .expect("BitSet::insert called on an integer bigger than capacity")
@@ -1475,6 +1553,30 @@ mod tests {
         set.insert(7);
         assert_eq!(set.count_ones(), 2);
         assert_eq!(set.count_zeros(), 8 - 2);
+    }
+
+    #[test]
+    fn append() {
+        let mut a = BitSet16::new();
+        a.insert(1);
+        a.insert(2);
+        a.insert(3);
+
+        let mut b = BitSet16::new();
+        b.insert(3);
+        b.insert(4);
+        b.insert(5);
+
+        a.append(&mut b);
+
+        assert_eq!(a.len(), 5);
+        assert_eq!(b.len(), 0);
+
+        assert!(a.contains(1));
+        assert!(a.contains(2));
+        assert!(a.contains(3));
+        assert!(a.contains(4));
+        assert!(a.contains(5));
     }
 
     #[test]
