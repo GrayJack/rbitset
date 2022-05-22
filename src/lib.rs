@@ -405,6 +405,34 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
             .expect("BitSet::remove called on an integer bigger than capacity")
     }
 
+    /// Retains only the elements specified by the predicate.
+    ///
+    /// In other words, remove all elements `e` for which `f(&e)` returns `false`.
+    /// The elements are visited in ascending order.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rbitset::BitSet16;
+    ///
+    /// let mut set = BitSet16::from_iter([1u8, 2, 3, 4, 5, 6]);
+    /// // Keep only the even numbers.
+    /// set.retain(|k| k % 2 == 0);
+    /// let res = BitSet16::from_iter([2u8, 4, 6]);
+    /// assert_eq!(set, res);
+    /// ```
+    pub fn retain<F>(&mut self, mut f: F)
+    where F: FnMut(usize) -> bool {
+        for value in self.clone().iter() {
+            if !f(value) {
+                // Since we are iteration over the values of the self itself, remove should never
+                // panic. Consider to use an unchecked function for removal if the panic code slow
+                // it down too much
+                self.remove(value);
+            }
+        }
+    }
+
     /// Returns `true` if the specified `bit` is enabled, in other words, if the set contains a
     /// value.
     ///
@@ -1553,6 +1581,15 @@ mod tests {
         set.insert(7);
         assert_eq!(set.count_ones(), 2);
         assert_eq!(set.count_zeros(), 8 - 2);
+    }
+
+    #[test]
+    fn retain() {
+        let mut set = BitSet16::from_iter([1u8, 2, 3, 4, 5, 6]);
+        // Keep only the even numbers.
+        set.retain(|k| k % 2 == 0);
+        let res = BitSet16::from_iter([2u8, 4, 6]);
+        assert_eq!(set, res);
     }
 
     #[test]
