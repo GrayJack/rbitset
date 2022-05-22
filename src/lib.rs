@@ -234,11 +234,11 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// assert_eq!(a.len(), 5);
     /// assert_eq!(b.len(), 0);
     ///
-    /// assert!(a.contains(&1));
-    /// assert!(a.contains(&2));
-    /// assert!(a.contains(&3));
-    /// assert!(a.contains(&4));
-    /// assert!(a.contains(&5));
+    /// assert!(a.contains(1));
+    /// assert!(a.contains(2));
+    /// assert!(a.contains(3));
+    /// assert!(a.contains(4));
+    /// assert!(a.contains(5));
     /// ```
     pub fn try_append<U, const M: usize>(
         &mut self, other: &mut BitSet<U, M>,
@@ -339,11 +339,11 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// assert_eq!(a.len(), 5);
     /// assert_eq!(b.len(), 0);
     ///
-    /// assert!(a.contains(&1));
-    /// assert!(a.contains(&2));
-    /// assert!(a.contains(&3));
-    /// assert!(a.contains(&4));
-    /// assert!(a.contains(&5));
+    /// assert!(a.contains(1));
+    /// assert!(a.contains(2));
+    /// assert!(a.contains(3));
+    /// assert!(a.contains(4));
+    /// assert!(a.contains(5));
     /// ```
     pub fn append<U, const M: usize>(&mut self, other: &mut BitSet<U, M>)
     where U: PrimInt {
