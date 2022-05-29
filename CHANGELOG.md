@@ -2,6 +2,24 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.3.0 - 2022-05-29
+
+### Documentation
+
+    - Fix example in the docs for `try_append` and `append` - (437f7b5) - GrayJack
+    
+### Features
+
+    - Add `retain` method for `BitSet` - (63238ad) - GrayJack
+    - Add `{try_}append` API - (c857f29) - GrayJack
+    
+### Miscellaneous Chores
+
+    - update gitignore - (69b75d2) - GrayJack
+    
+
+- - -
+
 ## v0.2.1 - 2022-05-19
 
 ### Features
