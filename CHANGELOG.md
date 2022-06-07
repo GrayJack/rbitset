@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.3.1 - 2022-06-07
+
+### Features
+
+    - Add unchecked version of insert and remove operations - (2d9a9aa) - GrayJack
+    
+
+- - -
+
 ## v0.3.0 - 2022-05-29
 
 ### Documentation
