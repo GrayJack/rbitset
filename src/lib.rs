@@ -283,6 +283,23 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
         })
     }
 
+    /// Inserts a value to the set without making any checks.
+    ///
+    /// If the set did not have this value present, `true` is returned.
+    ///
+    /// If the set did have this value present, `false` is returned.
+    ///
+    /// # Safety
+    /// Behavior is undefined if any of the following conditions are violated:
+    ///   - The `bit` value is bigger than the capacity of the bitset
+    pub unsafe fn insert_unchecked(&mut self, bit: usize) -> bool {
+        let (index, bitmask) = Self::location(bit);
+        let v = self.inner.get_unchecked_mut(index);
+        let contains = *v & bitmask == bitmask;
+        *v = (*v) | bitmask;
+        !contains
+    }
+
     /// Removes a value from the set. Returns whether the value was present in the set.
     ///
     /// If the bit is already disabled this is a no-op.
@@ -311,6 +328,22 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
             },
             None => false,
         })
+    }
+
+    /// Removes a value from the set without any checking. Returns whether the value was present in
+    /// the set.
+    ///
+    /// If the bit is already disabled this is a no-op.
+    ///
+    /// # Safety
+    /// Behavior is undefined if any of the following conditions are violated:
+    ///   - The `bit` value is bigger than the capacity of the bitset
+    pub unsafe fn remove_unchecked(&mut self, bit: usize) -> bool {
+        let (index, bitmask) = Self::location(bit);
+        let v = self.inner.get_unchecked_mut(index);
+        let was_present = *v & bitmask == bitmask;
+        *v = (*v) & !bitmask;
+        was_present
     }
 
     /// Move all elements from `other` into `self`, leaving `other` empty.
@@ -1551,6 +1584,28 @@ mod tests {
     }
 
     #[test]
+    fn insert_unchecked() {
+        let mut set = BitSet128::new();
+        unsafe {
+            set.insert_unchecked(0);
+            set.insert_unchecked(12);
+            set.insert_unchecked(67);
+            set.insert_unchecked(82);
+            assert!(set.insert_unchecked(127));
+            assert!(!set.insert_unchecked(127));
+        }
+
+        assert!(set.contains(0));
+        assert!(set.contains(12));
+        assert!(!set.contains(51));
+        assert!(!set.contains(63));
+        assert!(set.contains(67));
+        assert!(!set.contains(73));
+        assert!(set.contains(82));
+        assert!(set.contains(127));
+    }
+
+    #[test]
     fn remove() {
         let mut set = BitSet32::new();
         set.insert(12);
@@ -1558,6 +1613,18 @@ mod tests {
         assert!(set.contains(12));
         assert!(set.contains(17));
         set.remove(17);
+        assert!(set.contains(12));
+        assert!(!set.contains(17));
+    }
+
+    #[test]
+    fn remove_unchecked() {
+        let mut set = BitSet32::new();
+        set.insert(12);
+        set.insert(17);
+        assert!(set.contains(12));
+        assert!(set.contains(17));
+        unsafe { set.remove_unchecked(17) };
         assert!(set.contains(12));
         assert!(!set.contains(17));
     }
