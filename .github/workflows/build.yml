@@ -1,6 +1,21 @@
 name: Check and Test
 
-on: [push, pull_request]
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["**"]
+    paths-ignore:
+      - "**.md"
+      - LICENSE
+      - .github/FUNDING.yml
+      - .gitignore
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "**/LICENSE"
+      - .github/FUNDING.yml
+      - .editorconfig
+      - .gitignore
 
 jobs:
   build:
