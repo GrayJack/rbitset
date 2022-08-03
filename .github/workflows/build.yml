@@ -3,59 +3,26 @@ name: Check and Test
 on: [push, pull_request]
 
 jobs:
-  build-linux:
-    name: Linux
-    runs-on: ubuntu-latest
+  build:
+    name: ${{ matrix.target.name }} (${{ matrix.rust }})
+    runs-on: ${{ matrix.target.os }}
     strategy:
       matrix:
         rust: [stable, nightly]
+        target:
+          - name: Linux
+            os: ubuntu-latest
+          - name: macOS
+            os: macos-latest
+          - name: Windows
+            os: windows-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
+    - name: Checkout sources
+      uses: actions/checkout@v3
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
-        override: true
-        profile: minimal
-    - name: Cache cargo output
-      uses: Swatinem/rust-cache@v1
-    - name: Check
-      run: cargo check
-    - name: Check and Run tests
-      run: cargo test
-
-  build-macos:
-    name: MacOS
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        rust: [stable, nightly]
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: ${{ matrix.rust }}
-        override: true
-        profile: minimal
-    - name: Cache cargo output
-      uses: Swatinem/rust-cache@v1
-    - name: Check
-      run: cargo check
-    - name: Check and Run tests
-      run: cargo test
-
-  build-windows:
-    name: Windows
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        rust: [stable, nightly]
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: ${{ matrix.rust }}
-        override: true
-        profile: minimal
     - name: Cache cargo output
       uses: Swatinem/rust-cache@v1
     - name: Check
