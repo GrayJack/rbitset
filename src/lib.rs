@@ -1551,6 +1551,35 @@ mod tests {
     }
 
     #[test]
+    fn contains() {
+        let mut b = BitSet8::new();
+        b.insert(0);
+        b.insert(1);
+        b.insert(2);
+        b.insert(3);
+        b.insert(4);
+        b.insert(5);
+        b.insert(6);
+        b.insert(7);
+        assert!(b.contains(0));
+        assert!(b.contains(1));
+        assert!(b.contains(2));
+        assert!(b.contains(3));
+        assert!(b.contains(4));
+        assert!(b.contains(5));
+        assert!(b.contains(6));
+        assert!(b.contains(7));
+        assert!(!b.contains(8));
+        assert!(!b.contains(9));
+        assert!(!b.contains(10));
+        assert!(!b.contains(11));
+        assert!(!b.contains(12));
+        assert!(!b.contains(13));
+        assert!(!b.contains(14));
+        assert!(!b.contains(15));
+    }
+
+    #[test]
     fn try_too_big() {
         let mut set = BitSet8::new();
         assert_eq!(set.try_insert(8), Err(BitSetError::BiggerThanCapacity));
@@ -1689,22 +1718,34 @@ mod tests {
         let mut b = BitSet128::new();
 
         assert!(a.is_disjoint(&b));
+        assert!(b.is_disjoint(&a));
         b.insert(4);
         assert!(a.is_disjoint(&b));
+        assert!(b.is_disjoint(&a));
         b.insert(1);
         assert!(!a.is_disjoint(&b));
+        assert!(!b.is_disjoint(&a));
     }
 
     #[test]
-    fn subset() {
+    fn subset_superset() {
         let sup = BitSet8::from_iter([1u8, 2, 3]);
         let mut set = BitSet8::new();
 
+        // A superset is never a subset of it's subsets and vice vertsa
+        assert!(!sup.is_subset(&set));
+        assert!(!set.is_superset(&sup));
         assert!(set.is_subset(&sup));
+        assert!(sup.is_superset(&set));
         set.insert(2);
+        // A superset is never a subset of it's subsets
+        assert!(!sup.is_subset(&set));
+        assert!(!set.is_superset(&sup));
         assert!(set.is_subset(&sup));
+        assert!(sup.is_superset(&set));
         set.insert(4);
         assert!(!set.is_subset(&sup));
+        assert!(!sup.is_superset(&set));
     }
 
     #[test]
@@ -1859,6 +1900,12 @@ mod tests {
         let union: BitSet8 = a.union(&b).collect();
         let res = BitSet8::from_iter([1u8, 2, 3, 4]);
         assert_eq!(union, res);
+
+        let a = BitSet8::from_iter([1u8, 2, 3]);
+        let b = BitSet8::from_iter([4u8, 2, 3, 4, 5]);
+        let union: BitSet8 = a.union(&b).collect();
+        let res = BitSet8::from_iter([1u8, 2, 3, 4, 5]);
+        assert_eq!(union, res);
     }
 
     #[test]
@@ -1910,5 +1957,15 @@ mod tests {
             (10u16..16).collect::<BitSet16>(),
             !(0u16..10).collect::<BitSet16>()
         );
+    }
+
+    #[test]
+    fn extend() {
+        let mut set = BitSet16::new();
+        assert!(set.is_empty());
+
+        set.extend(0..10_usize);
+        assert_eq!(set.len(), 10);
+        assert_eq!(set, BitSet16::from_iter(0..10_usize));
     }
 }
