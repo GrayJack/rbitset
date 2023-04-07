@@ -229,7 +229,7 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// b.insert(4);
     /// b.insert(5);
     ///
-    /// a.try_append(&mut b).expect("An error ocurred");
+    /// a.try_append(&mut b).expect("An error occurred");
     ///
     /// assert_eq!(a.len(), 5);
     /// assert_eq!(b.len(), 0);
@@ -931,8 +931,8 @@ impl<T: PrimInt, U: Into<usize>, const N: usize> Extend<U> for BitSet<T, N> {
 }
 
 impl<T: PrimInt, const N: usize> IntoIterator for BitSet<T, N> {
-    type IntoIter = IntoIter<T, N>;
     type Item = usize;
+    type IntoIter = IntoIter<T, N>;
 
     fn into_iter(self) -> Self::IntoIter {
         crate::IntoIter(self)
@@ -940,8 +940,8 @@ impl<T: PrimInt, const N: usize> IntoIterator for BitSet<T, N> {
 }
 
 impl<'a, T: PrimInt, const N: usize> IntoIterator for &'a BitSet<T, N> {
-    type IntoIter = Iter<'a, T, N>;
     type Item = usize;
+    type IntoIter = Iter<'a, T, N>;
 
     fn into_iter(self) -> Self::IntoIter {
         crate::Iter::new(self)
@@ -1732,7 +1732,7 @@ mod tests {
         let sup = BitSet8::from_iter([1u8, 2, 3]);
         let mut set = BitSet8::new();
 
-        // A superset is never a subset of it's subsets and vice vertsa
+        // A superset is never a subset of it's subsets and vice versa
         assert!(!sup.is_subset(&set));
         assert!(!set.is_superset(&sup));
         assert!(set.is_subset(&sup));
@@ -1909,7 +1909,7 @@ mod tests {
     }
 
     #[test]
-    fn symetric_difference() {
+    fn symmetric_difference() {
         let a = BitSet8::from_iter([1u8, 2, 3]);
         let b = BitSet8::from_iter([4u8, 2, 3, 4]);
 
