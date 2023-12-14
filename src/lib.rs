@@ -931,20 +931,20 @@ impl<T: PrimInt, U: Into<usize>, const N: usize> Extend<U> for BitSet<T, N> {
 }
 
 impl<T: PrimInt, const N: usize> IntoIterator for BitSet<T, N> {
-    type Item = usize;
     type IntoIter = IntoIter<T, N>;
+    type Item = usize;
 
     fn into_iter(self) -> Self::IntoIter {
-        crate::IntoIter(self)
+        IntoIter(self)
     }
 }
 
 impl<'a, T: PrimInt, const N: usize> IntoIterator for &'a BitSet<T, N> {
-    type Item = usize;
     type IntoIter = Iter<'a, T, N>;
+    type Item = usize;
 
     fn into_iter(self) -> Self::IntoIter {
-        crate::Iter::new(self)
+        Iter::new(self)
     }
 }
 
@@ -1089,7 +1089,7 @@ impl<T: PrimInt, const N: usize> FusedIterator for Drain<'_, T, N> {}
 /// [`IntoIterator`] trait). See its documentation for more.
 ///
 /// [`into_iter`]: IntoIterator::into_iter
-/// [`IntoIterator`]: core::iter::IntoIterator
+/// [`IntoIterator`]: IntoIterator
 ///
 /// # Examples
 ///
