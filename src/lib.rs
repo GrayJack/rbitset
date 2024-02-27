@@ -3,7 +3,7 @@
 
 use core::{
     fmt,
-    iter::{Chain, ExactSizeIterator, FromIterator, FusedIterator},
+    iter::{Chain, FusedIterator},
     mem,
     ops::{Bound, Not, RangeBounds},
 };
