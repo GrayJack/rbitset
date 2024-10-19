@@ -11,7 +11,7 @@ use core::{
 use num_traits::{Bounded, PrimInt};
 
 #[cfg(feature = "serde")]
-use serde::{de::Visitor, ser::SerializeSeq, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::Visitor, ser::SerializeSeq};
 
 /// A bit set able to hold up to 8 elements.
 pub type BitSet8 = BitSet<u8, 1>;
@@ -1048,7 +1048,7 @@ impl<T: PrimInt, const N: usize> fmt::Debug for Drain<'_, T, N> {
     }
 }
 
-impl<'a, T: PrimInt, const N: usize> Iterator for Drain<'a, T, N> {
+impl<T: PrimInt, const N: usize> Iterator for Drain<'_, T, N> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -1189,13 +1189,13 @@ impl<'a, T: PrimInt, const N: usize> Iter<'a, T, N> {
     }
 }
 
-impl<'a, T: PrimInt, const N: usize> fmt::Debug for Iter<'a, T, N> {
+impl<T: PrimInt, const N: usize> fmt::Debug for Iter<'_, T, N> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_set().entries(self.clone()).finish()
     }
 }
 
-impl<'a, T: PrimInt, const N: usize> Iterator for Iter<'a, T, N> {
+impl<T: PrimInt, const N: usize> Iterator for Iter<'_, T, N> {
     type Item = usize;
 
     /// Iterator implementation for BitSet, guaranteed to remove and
@@ -1219,7 +1219,7 @@ impl<'a, T: PrimInt, const N: usize> Iterator for Iter<'a, T, N> {
     }
 }
 
-impl<'a, T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'a, T, N> {
+impl<T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'_, T, N> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.bit = self.bit.saturating_sub(2);
         while !self.borrow.try_contains(self.bit).ok()? {
@@ -1235,8 +1235,8 @@ impl<'a, T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'a, T, N> {
     }
 }
 
-impl<'a, T: PrimInt, const N: usize> FusedIterator for Iter<'a, T, N> {}
-impl<'a, T: PrimInt, const N: usize> ExactSizeIterator for Iter<'a, T, N> {}
+impl<T: PrimInt, const N: usize> FusedIterator for Iter<'_, T, N> {}
+impl<T: PrimInt, const N: usize> ExactSizeIterator for Iter<'_, T, N> {}
 
 /// A lazy iterator producing elements in the difference of `BitSet`s.
 ///
@@ -1264,7 +1264,7 @@ pub struct Difference<'a, T: PrimInt + 'a, U: PrimInt + 'a, const N: usize, cons
     other: &'a BitSet<U, M>,
 }
 
-impl<'a, T, U, const N: usize, const M: usize> fmt::Debug for Difference<'a, T, U, N, M>
+impl<T, U, const N: usize, const M: usize> fmt::Debug for Difference<'_, T, U, N, M>
 where
     T: PrimInt,
     U: PrimInt,
@@ -1333,7 +1333,7 @@ where
     other: &'a BitSet<U, M>,
 }
 
-impl<'a, T, U, const N: usize, const M: usize> fmt::Debug for Intersection<'a, T, U, N, M>
+impl<T, U, const N: usize, const M: usize> fmt::Debug for Intersection<'_, T, U, N, M>
 where
     T: PrimInt,
     U: PrimInt,
@@ -1394,7 +1394,7 @@ pub struct Union<'a, T: PrimInt + 'a, U: PrimInt + 'a, const N: usize, const M: 
     iter: UnionChoose<'a, T, U, N, M>,
 }
 
-impl<'a, T, U, const N: usize, const M: usize> fmt::Debug for Union<'a, T, U, N, M>
+impl<T, U, const N: usize, const M: usize> fmt::Debug for Union<'_, T, U, N, M>
 where
     T: PrimInt,
     U: PrimInt,
@@ -1490,7 +1490,7 @@ where
     iter: Chain<Difference<'a, T, U, N, M>, Difference<'a, U, T, M, N>>,
 }
 
-impl<'a, T, U, const N: usize, const M: usize> fmt::Debug for SymmetricDifference<'a, T, U, N, M>
+impl<T, U, const N: usize, const M: usize> fmt::Debug for SymmetricDifference<'_, T, U, N, M>
 where
     T: PrimInt,
     U: PrimInt,
