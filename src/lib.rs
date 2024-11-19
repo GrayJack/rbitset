@@ -1,5 +1,5 @@
 #![no_std]
-#![cfg_attr(_doc, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use core::{
     fmt,
