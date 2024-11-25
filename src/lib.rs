@@ -1038,6 +1038,7 @@ impl fmt::Display for BitSetError {
 ///
 /// let mut drain = a.drain();
 /// ```
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Drain<'a, T: PrimInt + 'a, const N: usize> {
     inner: &'a mut BitSet<T, N>,
 }
@@ -1102,6 +1103,7 @@ impl<T: PrimInt, const N: usize> FusedIterator for Drain<'_, T, N> {}
 /// ```
 #[derive(Clone)]
 #[repr(transparent)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct IntoIter<T, const N: usize>(BitSet<T, N>);
 
 impl<T: PrimInt, const N: usize> fmt::Debug for IntoIter<T, N> {
@@ -1177,6 +1179,7 @@ impl<T: PrimInt, const N: usize> ExactSizeIterator for IntoIter<T, N> {
 /// let mut iter = a.iter();
 /// ```
 #[derive(Clone)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Iter<'a, T, const N: usize> {
     borrow: &'a BitSet<T, N>,
     bit: usize,
@@ -1263,8 +1266,8 @@ impl<T: PrimInt, const N: usize> ExactSizeIterator for Iter<'_, T, N> {
 ///
 /// let mut difference = a.difference(&b);
 /// ```
-#[must_use = "this returns the difference as an iterator, without modifying either input set"]
 #[derive(Clone)]
+#[must_use = "this returns the difference as an iterator, without modifying either input set"]
 pub struct Difference<'a, T: PrimInt + 'a, U: PrimInt + 'a, const N: usize, const M: usize> {
     // iterator of the first set
     iter:  Iter<'a, T, N>,
@@ -1328,8 +1331,8 @@ where
 ///
 /// let mut intersection = a.intersection(&b);
 /// ```
-#[must_use = "this returns the intersection as an iterator, without modifying either input set"]
 #[derive(Clone)]
+#[must_use = "this returns the intersection as an iterator, without modifying either input set"]
 pub struct Intersection<'a, T, U, const N: usize, const M: usize>
 where
     T: PrimInt + 'a,
@@ -1396,8 +1399,8 @@ where
 ///
 /// let mut union_iter = a.union(&b);
 /// ```
-#[must_use = "this returns the union as an iterator, without modifying either input set"]
 #[derive(Clone)]
+#[must_use = "this returns the union as an iterator, without modifying either input set"]
 pub struct Union<'a, T: PrimInt + 'a, U: PrimInt + 'a, const N: usize, const M: usize> {
     iter: UnionChoose<'a, T, U, N, M>,
 }
@@ -1488,8 +1491,8 @@ where
 ///
 /// let mut intersection = a.symmetric_difference(&b);
 /// ```
-#[must_use = "this returns the difference as an iterator, without modifying either input set"]
 #[derive(Clone)]
+#[must_use = "this returns the difference as an iterator, without modifying either input set"]
 pub struct SymmetricDifference<'a, T, U, const N: usize, const M: usize>
 where
     T: PrimInt + 'a,
