@@ -1069,7 +1069,7 @@ impl<T: PrimInt, const N: usize> Iterator for Drain<'_, T, N> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.inner.count_ones() as usize;
+        let len = self.inner.len();
         (len, Some(len))
     }
 }
@@ -1131,7 +1131,7 @@ impl<T: PrimInt, const N: usize> Iterator for IntoIter<T, N> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.0.count_ones() as usize;
+        let len = self.0.len();
         (len, Some(len))
     }
 }
@@ -1155,7 +1155,11 @@ impl<T: PrimInt, const N: usize> DoubleEndedIterator for IntoIter<T, N> {
 }
 
 impl<T: PrimInt, const N: usize> FusedIterator for IntoIter<T, N> {}
-impl<T: PrimInt, const N: usize> ExactSizeIterator for IntoIter<T, N> {}
+impl<T: PrimInt, const N: usize> ExactSizeIterator for IntoIter<T, N> {
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+}
 
 /// An iterator over the items of a `BitSet`.
 ///
@@ -1236,7 +1240,11 @@ impl<T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'_, T, N> {
 }
 
 impl<T: PrimInt, const N: usize> FusedIterator for Iter<'_, T, N> {}
-impl<T: PrimInt, const N: usize> ExactSizeIterator for Iter<'_, T, N> {}
+impl<T: PrimInt, const N: usize> ExactSizeIterator for Iter<'_, T, N> {
+    fn len(&self) -> usize {
+        self.borrow.len() - self.passed_count
+    }
+}
 
 /// A lazy iterator producing elements in the difference of `BitSet`s.
 ///

@@ -12,6 +12,7 @@ license = "MIT"
 keywords = ["no_std", "bitset", "set"]
 categories = ["data-structures", "no-std"]
 edition = "2021"
+exclude = ["/.fleet", "/.github", "/.idea", "/.vscode"]
 
 [package.metadata.docs.rs]
 all-features = true
