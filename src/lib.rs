@@ -1073,6 +1073,11 @@ impl<T: PrimInt, const N: usize> Iterator for Drain<'_, T, N> {
         let len = self.inner.len();
         (len, Some(len))
     }
+
+    fn count(self) -> usize
+    where Self: Sized {
+        self.len()
+    }
 }
 
 impl<T: PrimInt, const N: usize> ExactSizeIterator for Drain<'_, T, N> {
@@ -1136,6 +1141,11 @@ impl<T: PrimInt, const N: usize> Iterator for IntoIter<T, N> {
         let len = self.0.len();
         (len, Some(len))
     }
+
+    fn count(self) -> usize
+    where Self: Sized {
+        self.len()
+    }
 }
 
 impl<T: PrimInt, const N: usize> DoubleEndedIterator for IntoIter<T, N> {
@@ -1158,6 +1168,7 @@ impl<T: PrimInt, const N: usize> DoubleEndedIterator for IntoIter<T, N> {
 
 impl<T: PrimInt, const N: usize> FusedIterator for IntoIter<T, N> {}
 impl<T: PrimInt, const N: usize> ExactSizeIterator for IntoIter<T, N> {
+    #[inline]
     fn len(&self) -> usize {
         self.0.len()
     }
@@ -1224,6 +1235,11 @@ impl<T: PrimInt, const N: usize> Iterator for Iter<'_, T, N> {
         let len = self.borrow.len() - self.passed_count;
         (len, Some(len))
     }
+
+    fn count(self) -> usize
+    where Self: Sized {
+        self.len()
+    }
 }
 
 impl<T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'_, T, N> {
@@ -1244,6 +1260,7 @@ impl<T: PrimInt, const N: usize> DoubleEndedIterator for Iter<'_, T, N> {
 
 impl<T: PrimInt, const N: usize> FusedIterator for Iter<'_, T, N> {}
 impl<T: PrimInt, const N: usize> ExactSizeIterator for Iter<'_, T, N> {
+    #[inline]
     fn len(&self) -> usize {
         self.borrow.len() - self.passed_count
     }
