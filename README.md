@@ -4,7 +4,7 @@ A bit set, being able to hold a fixed amount of booleans in an array of
 integers.
 
 This is a fork of [cbitset](https://crates.io/crates/cbitset) that re-implements
-the BitSet type using const generics
+the BitSet type using const generics, separating the structure to the iterators, and including other iterators .
 
 ## Alternatives
 
@@ -19,7 +19,7 @@ the struct representation is important, such as
 
 ## Inspiration
 
-I think this is a relatively common thing to do in C, for I stumbled upon the
+This is a relatively common thing to do in C, for I stumbled upon the
 concept in the [MUSL](https://www.musl-libc.org/) standard library. An example
 is its usage in
 [strspn](https://git.musl-libc.org/cgit/musl/tree/src/string/strspn.c).
