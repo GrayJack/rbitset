@@ -2,6 +2,54 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.3.3 - 2025-02-02
+
+### Bug Fixes
+
+    - Fix clippy lints - (71c3087) - GrayJack
+    - Fix warnings - (524ad20) - GrayJack
+    
+### Continuous Integration
+
+    - Update actions - (cd693df) - GrayJack
+    - Move to checkout v3 on docs and fmt actions - (297c5b3) - GrayJack
+    - Avoid running CI with changes on files not related to code - (5152ccf) - GrayJack
+    - Simplify `build` workflow - (cbb950b) - GrayJack
+    - Use `dtolnay/rust-toolchain` for the rust toolchain instead - (24e514a) - GrayJack
+    - Add coverage workflow - (7f3e528) - GrayJack
+    
+### Documentation
+
+    - Add module level docs - (47d1282) - GrayJack
+    - Use the `docsrs` cfg flag - (9101baa) - GrayJack
+    
+### Features
+
+    - Add `must_use` on all iterators - (4f0eff3) - GrayJack
+    
+### Miscellaneous Chores
+
+    - Update cog.toml - (e084a59) - GrayJack
+    - bump version - (f7be11b) - GrayJack
+    - Update README - (ae7c6c5) - GrayJack
+    - Bump version - (4ba2e9a) - GrayJack
+    - Simplify - (da926f2) - GrayJack
+    - Fix typos - (5565172) - GrayJack
+    - Add .deepsource.toml - (c51e196) - GrayJack
+    - Activate Github sponsors - (fc90779) - GrayJack
+    
+### Performance Improvements
+
+    - Specialize `Iterator::count` when for `Drain`, `IntoIter` and `Iter` - (5e5f1ba) - GrayJack
+    - Specialize `ExactSizeIterator::len` when possible - (0726d88) - GrayJack
+    
+### Tests
+
+    - Improve test coverage - (c2f8342) - GrayJack
+    
+
+- - -
+
 ## v0.3.1 - 2022-06-07
 
 ### Features
