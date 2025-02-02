@@ -1,4 +1,4 @@
-pre_bump_hooks = ["cargo fmt", "cargo clippy", "cargo bump {{version}}"]
+pre_bump_hooks = ["cargo fmt", "cargo clippy"]
 post_bump_hooks = ["git push", "git push origin v{{version}}", "cargo publish"]
 tag_prefix = "v"
 
