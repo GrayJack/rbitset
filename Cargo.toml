@@ -9,8 +9,8 @@ authors = [
 repository = "https://github.com/GrayJack/rbitset"
 readme = "README.md"
 license = "MIT"
-keywords = ["no_std", "bitset", "set"]
-categories = ["data-structures", "no-std"]
+categories = ["data-structures", "no-std", "algorithms", "embedded"]
+keywords = ["bitset", "bitarray", "no_std", "set", "stack-allocated"]
 edition = "2021"
 exclude = ["/.fleet", "/.github", "/.idea", "/.vscode"]
 
