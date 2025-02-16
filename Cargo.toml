@@ -16,7 +16,12 @@ exclude = ["/.fleet", "/.github", "/.idea", "/.vscode"]
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = [
+    "--generate-link-to-definition",
+    "--show-type-layout ",
+    "--cfg",
+    "docsrs",
+]
 
 [dependencies]
 num-traits = { version = "0.2.19", default-features = false }

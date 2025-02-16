@@ -33,9 +33,16 @@
 //!     s.len()
 //! }
 //! ```
+//!
+//! # Crate Features
+//!
+//! ## Ecosystem features
+//!
+//! - **serde** — When enabled, `rbitset` will depend on the `serde` crate and the [`BitSet`] type
+//!   will implement the `Serialize` and `Deserialize` traits.
 
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(any(docsrs, doc), feature(doc_cfg, doc_auto_cfg))]
 
 use core::{
     fmt,
@@ -1001,7 +1008,6 @@ impl<T: PrimInt, const N: usize> Not for BitSet<T, N> {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(_doc, doc(cfg(feature = "serde")))]
 impl<T: PrimInt, const N: usize> Serialize for BitSet<T, N> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where S: serde::Serializer {
@@ -1014,7 +1020,6 @@ impl<T: PrimInt, const N: usize> Serialize for BitSet<T, N> {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(_doc, doc(cfg(feature = "serde")))]
 impl<'de, T: PrimInt + Default, const N: usize> Deserialize<'de> for BitSet<T, N> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
