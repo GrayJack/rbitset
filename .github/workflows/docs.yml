@@ -30,9 +30,9 @@ jobs:
       uses: Swatinem/rust-cache@v2
 
     - name: Build Rust Documentation
-      run: cargo doc -Zrustdoc-map
+      run: cargo doc -Zrustdoc-map -Zrustdoc-scrape-examples
       env:
-        RUSTDOCFLAGS: --generate-link-to-definition --show-type-layout --cfg docsrs
+        RUSTDOCFLAGS: -Zunstable-options --generate-link-to-definition --show-type-layout --cfg docsrs
 
     - name: Deploy Docs
       uses: peaceiris/actions-gh-pages@v3
