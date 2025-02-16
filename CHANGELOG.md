@@ -2,12 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.3.5](https://github.com/GrayJack/rbitset/compare/v0.3.4..v0.3.5) — 2025-02-16
 
 ### 📚 Documentation
 
 - Update and cleanup doc attributes — ([f8f6bbb](https://github.com/GrayJack/rbitset/commit/f8f6bbb430c5404f8281b07a103d5f2b950e775a))
 - Add changelog to rustdoc — ([1a5ce4f](https://github.com/GrayJack/rbitset/commit/1a5ce4f7b5cae43e89dbc88aa207df81cc59ee63))
+- Improve entry documentation — ([3c4f03f](https://github.com/GrayJack/rbitset/commit/3c4f03f0bd4825a8879fc0fcb9d955942303673f))
+- Improve `BitSet` type documentation — ([8e142be](https://github.com/GrayJack/rbitset/commit/8e142be3f9af606206deb63ae42aa4c5710d40c1))
+- Fix typos — ([1346c48](https://github.com/GrayJack/rbitset/commit/1346c48035dab8da0bd56e723f6df380c30df23a))
 
 ### ⚙️ Continuous Integration
 
