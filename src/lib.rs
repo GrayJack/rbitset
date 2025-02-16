@@ -1,16 +1,16 @@
 //! A `#[no_std]` compatible crate providing a fixed-size [`BitSet`] implementation that stores
 //! booleans efficiently in an array of integers.
 //!
-//! The [`BitSet`] type is `repr(transparent)`,  meaning the representation of the struct is
-//! guaranteed to be the same as the inner array, making it usable from stuff where the struct
-//! representation is important, such as C FFI, optimization and more.
-//!
 //! # Overview
 //!
 //! The primary type of this crate is [`BitSet`]. A `BitSet` value is a fixed-size collection of
 //! bits, each representing a boolean value. It provides methods for setting, clearing, and
 //! testing individual bits, as well as performing set operations like union, intersection, and
 //! difference.
+//!
+//! The [`BitSet`] type is `repr(transparent)`,  meaning the representation of the struct is
+//! guaranteed to be the same as the inner array, making it usable where the struct
+//! representation is important, such as C FFI, optimization and more.
 //!
 //! The remainder of this documentation is organized as follows:
 //!
@@ -118,10 +118,33 @@ pub type BitSet512 = BitSet<u64, 8>;
 /// A bit set able to hold up to 1024 elements.
 pub type BitSet1024 = BitSet<u64, 16>;
 
-/// The bit set itself.
+/// This type represents a fixed-size bit set.
 ///
-/// This wrapper is `#![repr(transparent)]` and guaranteed to have the same memory
-/// representation as the inner bit array
+/// It is implemented as a wrapper around an array of primitive integers. Each bit in the array
+/// represents the presence or absence of an element in the set.
+///
+/// This type is `#![repr(transparent)]` and guaranteed to have the same memory
+/// representation as the inner bit array.
+///
+/// # Type Parameters
+///
+/// - `T`: The primitive integer type used to store the bits. It must be a primitive integer.
+/// - `N`: The number of elements of type `T` in the inner array representation.
+///
+/// This allows the user of the type to choose the best combination for their use-case.
+///
+/// ## Capacity
+///
+/// The total capacity of the `BitSet` (i.e., the maximum value that can be stored) is
+/// determined by the chosen `T` and `N` by the formula `N * size_of::<T>() * 8`.  For example:
+///
+/// - `BitSet<u8, 1>` has a capacity of 8 bits.
+/// - `BitSet<u64, 4>` has a capacity of 256 bits.
+///
+/// ## Type alias
+///
+/// This crate also provides several type alias for this type with the most common capacity usages,
+/// with the optimal choices of `T` and `N` for the most common targets.
 ///
 /// # Panics
 /// All non-try functions taking a bit parameter panics if the bit is bigger
