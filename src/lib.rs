@@ -466,6 +466,7 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// # Panics
     ///
     /// This function may panic if `other` contains activated bits bigger than what `self` capacity.
+    /// Check [`try_append`](BitSet::try_append) for a non-panicking version.
     ///
     /// # Examples
     ///
@@ -507,9 +508,10 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// If the set did have this value present, `false` is returned.
     ///
     /// # Panics
+    ///
     /// This function may panic if `bit` value trying to be inserted is bigger than the
     /// [`capacity`](BitSet::capacity) of the [`BitSet`]. Check [`try_insert`](BitSet::try_insert)
-    /// for a non-panicking version
+    /// for a non-panicking version.
     ///
     /// # Examples
     ///
@@ -535,7 +537,7 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// # Panics
     /// This function may panic if `bit` value trying to be removed is bigger than the
     /// [`capacity`](BitSet::capacity) of the [`BitSet`]. Check [`try_remove`](BitSet::try_remove)
-    /// for a non-panicking version
+    /// for a non-panicking version.
     ///
     /// # Examples
     ///
