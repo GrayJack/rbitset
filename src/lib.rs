@@ -5,7 +5,52 @@
 //! guaranteed to be the same as the inner array, making it usable from stuff where the struct
 //! representation is important, such as C FFI, optimization and more.
 //!
-//! ## Example
+//! # Overview
+//!
+//! The primary type of this crate is [`BitSet`]. A `BitSet` value is a fixed-size collection of
+//! bits, each representing a boolean value. It provides methods for setting, clearing, and
+//! testing individual bits, as well as performing set operations like union, intersection, and
+//! difference.
+//!
+//! The remainder of this documentation is organized as follows:
+//!
+//! - [Features](#features) gives a very brief summary of the features `rbitset` does and does not
+//!   support.
+//! - [Usage](#usage) shows how to add `rbitset` to your Rust project.
+//! - [Examples](#examples) shows a small cookbook of programs for common tasks.
+//! - [Crate features](#crate-features) documents the Cargo features that can be enabled or disabled
+//!   for this crate.
+//!
+//! # Features
+//!
+//! Here is a non-exhaustive list of the things that `rbitset` supports:
+//!
+//! - `no_std` support: Can be used in environments without the standard library.
+//! - Fixed-size: The size of the bitset is determined at compile time.
+//! - Efficient bit manipulation: Provides methods for setting, clearing, and testing bits.
+//! - Set operations: Supports union, intersection, difference, and symmetric difference as
+//!   iterators.
+//! - Serde support: Can be serialized and deserialized using the `serde` crate (with the `serde`
+//!   feature enabled).
+//!
+//! # Usage
+//!
+//! The `rbitset` project is [on crates.io](https://crates.io/crates/rbitset) and can be
+//! used by adding `rbitset` to your dependencies in your project's `Cargo.toml`.
+//! Or more simply, just run `cargo add rbitset`.
+//!
+//! ```sh
+//! cargo add rbitset
+//! ```
+//!
+//! or
+//!
+//! ```toml
+//! [dependencies]
+//! rbitset = "0.3.4"
+//! ```
+//!
+//! # Examples
 //!
 //! Bit sets are extremely cheap. You can store any number from 0 to 255 in an array
 //! of 4x 64-bit numbers. The lookup should in theory be O(1). Example usage of this
