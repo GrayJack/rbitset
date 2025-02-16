@@ -42,7 +42,7 @@
 //!   will implement the `Serialize` and `Deserialize` traits.
 
 #![no_std]
-#![cfg_attr(any(docsrs, doc), feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 use core::{
     fmt,
@@ -1598,3 +1598,11 @@ where
 
 #[cfg(test)]
 mod tests;
+
+/// A documentation module for this crate changelog.
+///
+/// This module is only available in the crate documentation.
+#[cfg(doc)]
+#[doc = include_str!("../CHANGELOG.md")]
+#[allow(rustdoc::broken_intra_doc_links)]
+pub mod changelog {}
