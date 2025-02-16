@@ -1,5 +1,5 @@
 pre_bump_hooks = ["cargo fmt", "cargo clippy"]
-post_bump_hooks = ["git push", "git push origin v{{version}}", "cargo publish"]
+post_bump_hooks = ["git push", "git push origin v{{version}}"]
 tag_prefix = "v"
 
 [commit_types]
