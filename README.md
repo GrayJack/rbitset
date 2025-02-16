@@ -1,5 +1,11 @@
 # rbitset
 
+[![Rust](https://github.com/GrayJack/rbitset/actions/workflows/build.yml/badge.svg)](https://github.com/GrayJack/rbitset/actions)
+[![Latest version](https://img.shields.io/crates/v/rbitset.svg)](https://crates.io/crates/rbitset)
+[![Documentation](https://docs.rs/rbitset/badge.svg)](https://docs.rs/rbitset)
+![License](https://img.shields.io/crates/l/rbitset.svg)
+
+
 A bit set, being able to hold a fixed amount of booleans in an array of
 integers.
 

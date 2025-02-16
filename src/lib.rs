@@ -47,7 +47,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! rbitset = "0.3.5"
+//! rbitset = "0.3.6"
 //! ```
 //!
 //! # Examples

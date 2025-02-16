@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6](https://github.com/GrayJack/rbitset/compare/v0.3.5..v0.3.6) — 2025-02-16
+
+### 📚 Documentation
+
+- Fix docs.rs doc generation — ([2bb5866](https://github.com/GrayJack/rbitset/commit/2bb5866c4c79702fb4375434a9eaade35c0232bf))
+
 ## [0.3.5](https://github.com/GrayJack/rbitset/compare/v0.3.4..v0.3.5) — 2025-02-16
 
 ### 📚 Documentation
