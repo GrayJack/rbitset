@@ -25,19 +25,23 @@
 //!
 //! Here is a non-exhaustive list of the things that `rbitset` supports:
 //!
-//! - `no_std` support: Can be used in environments without the standard library.
-//! - Fixed-size: The size of the bitset is determined at compile time.
-//! - Efficient bit manipulation: Provides methods for setting, clearing, and testing bits.
+//! - `no_std` support
+//! - Fixed-size: The size of the bitset is determined at compile time
+//! - Efficient bit manipulation: Provides methods for setting, clearing, and testing bits
 //! - Set operations: Supports union, intersection, difference, and symmetric difference as
-//!   iterators.
-//! - Serde support: Can be serialized and deserialized using the `serde` crate (with the `serde`
-//!   feature enabled).
+//!   iterators
+//! - Opt- in `serde` support: [`BitSet`] can be serialized and deserialized using the `serde` crate
+//!   (with the `serde` feature enabled)
+//!
+//! Also, these sub-modules serve to provide longer form documentation:
+//!
+//! - [Changelog](crate::changelog)
 //!
 //! # Usage
 //!
 //! The `rbitset` project is [on crates.io](https://crates.io/crates/rbitset) and can be
 //! used by adding `rbitset` to your dependencies in your project's `Cargo.toml`.
-//! Or more simply, just run `cargo add rbitset`.
+//! Or more simply, by using `cargo add`.
 //!
 //! ```sh
 //! cargo add rbitset
@@ -85,7 +89,6 @@
 //!
 //! - **serde** — When enabled, `rbitset` will depend on the `serde` crate and the [`BitSet`] type
 //!   will implement the `Serialize` and `Deserialize` traits.
-
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
