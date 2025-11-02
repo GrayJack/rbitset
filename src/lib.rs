@@ -90,7 +90,7 @@
 //! - **serde** — When enabled, `rbitset` will depend on the `serde` crate and the [`BitSet`] type
 //!   will implement the `Serialize` and `Deserialize` traits.
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use core::{
     fmt,
