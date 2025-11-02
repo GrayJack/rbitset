@@ -302,9 +302,7 @@ impl<T, const N: usize> BitSet<T, N> {
     const fn item_size() -> usize {
         mem::size_of::<T>() * 8
     }
-}
 
-impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// Transmutes a reference to a borrowed bit array to a borrowed BitSet with the same lifetime.
     ///
     /// # Examples
@@ -318,11 +316,17 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// assert!(set.contains(2));
     /// assert!(set.contains(3));
     /// ```
-    pub fn from_ref(inner: &mut [T; N]) -> &mut Self {
-        // This should be completely safe as the memory representation is the same
+    pub const fn from_ref(inner: &mut [T; N]) -> &mut Self {
+        debug_assert!(
+            size_of::<T>() <= 128,
+            "`T` should be one of type `{{integer}}`"
+        );
+        // SAFETY: This is completely safe as the memory representation is the same
         unsafe { mem::transmute(inner) }
     }
+}
 
+impl<T: PrimInt, const N: usize> BitSet<T, N> {
     /// Returns slot index along with the bitmask for the bit index to the slot this item was in.
     fn location(bit: usize) -> (usize, T) {
         let index = bit / Self::item_size();
@@ -952,7 +956,9 @@ impl<T: PrimInt, const N: usize> BitSet<T, N> {
 }
 
 impl<T: Default + PrimInt, const N: usize> BitSet<T, N> {
-    /// Set all bits in a range. `fill(.., false)` is effectively the same as `clear()`.
+    /// Set all bits in a range.
+    ///
+    /// `fill(.., false)` is effectively the same as `clear()`.
     ///
     /// # Panics
     /// Panics if the start or end bounds are more than the capacity.
