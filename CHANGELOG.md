@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0](https://github.com/GrayJack/rbitset/compare/v0.3.6..v1.0.0) — 2025-11-02
+
+### 🚀 Features
+
+- Constify `BitSet::from_ref` — ([35a646b](https://github.com/GrayJack/rbitset/commit/35a646bfa4e6468147a7beb3eb04c054afd997bd))
+
+### 🐞 Bug Fixes
+
+- Fix docs generation — ([8d0036f](https://github.com/GrayJack/rbitset/commit/8d0036ff57717607fba648c173b60278f84dad7c))
+
+### 📚 Documentation
+
+- Rewords a few sentences — ([c3aa404](https://github.com/GrayJack/rbitset/commit/c3aa40466cd81970b0d293c2896d0b184825d37b))
+
 ## [0.3.6](https://github.com/GrayJack/rbitset/compare/v0.3.5..v0.3.6) — 2025-02-16
 
 ### 📚 Documentation
