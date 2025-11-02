@@ -15,8 +15,8 @@ the BitSet type using const generics, separating the structure to the iterators,
 ## Alternatives
 
 There are already quite a few libraries out there for bit sets, but I can't seem
-to find a `#![no_std]` one that works with fixed-sized arrays. Most of them seem
-to want to be dynamic.
+to find a `#![no_std]` one that works with fixed-sized arrays besides `cbitset`.
+Most of them seem to want to be dynamic.
 
 rbitset also is `repr(transparent)`, meaning the representation of the struct is
 guaranteed to be the same as the inner array, making it usable from stuff where
