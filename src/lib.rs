@@ -102,7 +102,7 @@ use core::{
 use num_traits::{Bounded, PrimInt};
 
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize, de::Visitor, ser::SerializeSeq};
+use serde_core::{Deserialize, Serialize, de::Visitor, ser::SerializeSeq};
 
 /// A bit set able to hold up to 8 elements.
 pub type BitSet8 = BitSet<u8, 1>;
@@ -1089,7 +1089,7 @@ impl<T: PrimInt, const N: usize> Not for BitSet<T, N> {
 #[cfg(feature = "serde")]
 impl<T: PrimInt, const N: usize> Serialize for BitSet<T, N> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: serde::Serializer {
+    where S: serde_core::Serializer {
         let mut seq = serializer.serialize_seq(Some(self.len()))?;
         for ref e in self {
             seq.serialize_element(e)?;
@@ -1101,7 +1101,7 @@ impl<T: PrimInt, const N: usize> Serialize for BitSet<T, N> {
 #[cfg(feature = "serde")]
 impl<'de, T: PrimInt + Default, const N: usize> Deserialize<'de> for BitSet<T, N> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where D: serde::Deserializer<'de> {
+    where D: serde_core::Deserializer<'de> {
         use core::marker::PhantomData;
 
         struct BitSetVisitor<T: PrimInt, const N: usize>(PhantomData<BitSet<T, N>>);
@@ -1114,7 +1114,7 @@ impl<'de, T: PrimInt + Default, const N: usize> Deserialize<'de> for BitSet<T, N
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where A: serde::de::SeqAccess<'de> {
+            where A: serde_core::de::SeqAccess<'de> {
                 let mut set = BitSet::with_default();
 
                 // While there are entries remaining in the input, add them into our set.

@@ -20,7 +20,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 num-traits = { version = "0.2.19", default-features = false }
-serde = { version = "1.0.0", default-features = false, optional = true }
+serde_core = { version = "1.0.0", default-features = false, optional = true }
 
 [features]
-serde = ["dep:serde"]
+serde = ["dep:serde_core"]
