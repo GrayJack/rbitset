@@ -87,8 +87,8 @@
 //!
 //! ## Ecosystem features
 //!
-//! - **serde** — When enabled, `rbitset` will depend on the `serde` crate and the [`BitSet`] type
-//!   will implement the `Serialize` and `Deserialize` traits.
+//! - **serde** — When enabled, `rbitset` will depend on the `serde-core` crate and the [`BitSet`]
+//!   type will implement the `Serialize` and `Deserialize` traits.
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
