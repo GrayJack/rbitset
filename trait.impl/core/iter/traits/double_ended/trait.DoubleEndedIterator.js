@@ -1,0 +1,9 @@
+(function() {
+    const implementors = Object.fromEntries([["rbitset",[["impl&lt;T: <a class=\"trait\" href=\"num_traits/int/trait.PrimInt.html\" title=\"trait num_traits::int::PrimInt\">PrimInt</a>, const N: <a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/core/primitive.usize.html\">usize</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html\" title=\"trait core::iter::traits::double_ended::DoubleEndedIterator\">DoubleEndedIterator</a> for <a class=\"struct\" href=\"rbitset/struct.IntoIter.html\" title=\"struct rbitset::IntoIter\">IntoIter</a>&lt;T, N&gt;",0],["impl&lt;T: <a class=\"trait\" href=\"num_traits/int/trait.PrimInt.html\" title=\"trait num_traits::int::PrimInt\">PrimInt</a>, const N: <a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/core/primitive.usize.html\">usize</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html\" title=\"trait core::iter::traits::double_ended::DoubleEndedIterator\">DoubleEndedIterator</a> for <a class=\"struct\" href=\"rbitset/struct.Iter.html\" title=\"struct rbitset::Iter\">Iter</a>&lt;'_, T, N&gt;",0]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":59,"fragment_lengths":[1179]}
