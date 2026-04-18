@@ -221,6 +221,33 @@ macro_rules! impl_new {
             pub const fn new() -> Self {
                 Self { inner: [0; N] }
             }
+
+            /// Create an instance of [`BitSet`] with all bits unset.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use rbitset::BitSet;
+            ///
+            /// let set = BitSet::<u8, 1>::none();
+            /// ```
+            #[inline]
+            pub const fn none() -> Self {
+                Self::new()
+            }
+
+            /// Create an instance of [`BitSet`] with all bits set.
+            ///
+            /// # Examples
+            ///
+            /// ```
+            /// use rbitset::BitSet;
+            ///
+            /// let set = BitSet::<u8, 1>::all();
+            /// ```
+            pub const fn all() -> Self {
+                Self { inner: [<$t>::MAX; N] }
+            }
         }
         )+
     };
